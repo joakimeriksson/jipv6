@@ -104,7 +104,7 @@ public class UDPPacket implements IPPayload {
       }
       
       packet.payloadLen = size;
-      int sum = packet.upperLayerHeaderChecksum();
+      int sum = packet.upperLayerHeaderChecksum((byte)DISPATCH);
       
       sum = IPv6Packet.checkSum(sum, data, size);
       sum = (~sum) & 0xffff;
@@ -144,7 +144,7 @@ public class UDPPacket implements IPPayload {
     packet.setData(7, (byte) 0);
     byte[] data = packet.getPayload();
     packet.payloadLen = data.length;
-    int sum = packet.upperLayerHeaderChecksum();
+    int sum = packet.upperLayerHeaderChecksum((byte)DISPATCH);
     sum = IPv6Packet.checkSum(sum, data, data.length);
     sum = (~sum) & 0xffff;
     if (sum == checkSum) {
@@ -168,7 +168,7 @@ public class UDPPacket implements IPPayload {
     vheader[5] = (byte) (length & 0xff);
 
     packet.payloadLen = length;
-    int sum = packet.upperLayerHeaderChecksum();
+    int sum = packet.upperLayerHeaderChecksum((byte) DISPATCH);
     
     sum = IPv6Packet.checkSum(sum, vheader, 8);
     sum = IPv6Packet.checkSum(sum, payload, payload.length);

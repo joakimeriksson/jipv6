@@ -46,7 +46,7 @@ import se.sics.jipv6.util.Utils;
 
 public class ICMP6Packet implements IPPayload {
 
-  public static final int DISPATCH = 58;
+  public static final byte DISPATCH = 58;
 
   public static final int ECHO_REQUEST = 128;
   public static final int ECHO_REPLY = 129;
@@ -261,7 +261,7 @@ public class ICMP6Packet implements IPPayload {
 
       byte[] data = packet.getPayload();
       //System.out.println("Payloadsize: " + data.length);
-      int sum = packet.upperLayerHeaderChecksum();
+      int sum = packet.upperLayerHeaderChecksum(DISPATCH);
       sum = IPv6Packet.checkSum(sum, data, data.length);
       sum = (~sum) & 0xffff;
       /* TODO: here we should tag packet as failed !!! */
@@ -349,7 +349,7 @@ public class ICMP6Packet implements IPPayload {
      * into the payload which sets the payload length...  
      */
     packet.payloadLen = pos;
-    int sum = packet.upperLayerHeaderChecksum();
+    int sum = packet.upperLayerHeaderChecksum(DISPATCH);
     sum = IPv6Packet.checkSum(sum, packetData, packetData.length);
     sum = (~sum) & 0xffff;
 

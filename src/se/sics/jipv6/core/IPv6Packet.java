@@ -210,7 +210,7 @@ public class IPv6Packet extends Packet implements IPPacketer {
   }
 
   /* not yet working checksum code... */
-  public int upperLayerHeaderChecksum() {
+  public int upperLayerHeaderChecksum(byte nextHeader) {
     /* First sum pseudoheader. */
     /* IP protocol and length fields. This addition cannot carry. */
     if (payloadLen == 0) throw new IllegalStateException("No payload length when calculating upper layer checksum.");

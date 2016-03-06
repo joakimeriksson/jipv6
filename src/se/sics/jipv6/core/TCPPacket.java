@@ -53,7 +53,7 @@ public class TCPPacket implements IPPayload {
   public static final int DEFAULT_WINDOW = 45;
   public static final int DEFAULT_MSS = 45;
   
-  public static final int DISPATCH = 6;
+  public static final byte DISPATCH = 6;
   
   public static final int OPT_MSS = 2;
   public static final int OPT_MSS_LEN = 4;
@@ -127,7 +127,7 @@ public class TCPPacket implements IPPayload {
     }
 
     packet.payloadLen = size;
-    int sum = packet.upperLayerHeaderChecksum();
+    int sum = packet.upperLayerHeaderChecksum(DISPATCH);
     
     sum = IPv6Packet.checkSum(sum, data, size);
     sum = (~sum) & 0xffff;
@@ -185,7 +185,7 @@ public class TCPPacket implements IPPayload {
     packet.setData(16, (byte) 0);
     packet.setData(17, (byte) 0);
     byte[] data = packet.getPayload();
-    int sum = packet.upperLayerHeaderChecksum();
+    int sum = packet.upperLayerHeaderChecksum(DISPATCH);
     sum = IPv6Packet.checkSum(sum, data, data.length);
     sum = (~sum) & 0xffff;
     if (sum == checksum) {
