@@ -4,8 +4,10 @@ import java.io.InputStreamReader;
 
 import se.sics.jipv6.core.HC06Packeter;
 import se.sics.jipv6.core.HopByHopOption;
+import se.sics.jipv6.core.IPv6ExtensionHeader;
 import se.sics.jipv6.core.IPv6Packet;
 import se.sics.jipv6.core.Packet;
+import se.sics.jipv6.core.UDPPacket;
 import se.sics.jipv6.mac.IEEE802154Handler;
 import se.sics.jipv6.util.Utils;
 
@@ -38,20 +40,41 @@ public class TestSniff {
                         int dispatch = packet.getData(0);
                         packet.setAttribute("6lowpan.dispatch", dispatch);
                         System.out.printf("Dispatch: %02x\n", dispatch & 0xff);
-                        hc06Packeter.parsePacketData(ipPacket);
-                        boolean more = true;
-                        byte nextHeader = ipPacket.getNextHeader();
-                        while(more) {
-                            System.out.printf("Next Header: %d\n", nextHeader);
-                            switch(nextHeader) {
-                            case HopByHopOption.DISPATCH:
-                                HopByHopOption hbh = new HopByHopOption();
-                                hbh.parsePacketData(ipPacket);
-                                ipPacket.setIPPayload(hbh);
-                                nextHeader = hbh.getNextHeader();
-                                break;
-                            default:
-                                more = false;
+                        if (hc06Packeter.parsePacketData(ipPacket)) {
+                            boolean more = true;
+                            byte nextHeader = ipPacket.getNextHeader();
+                            IPv6ExtensionHeader extHeader = null;
+                            while(more) {
+                                System.out.printf("Next Header: %d pos:%d\n", nextHeader, ipPacket.getPos());
+                                ipPacket.printPayload();
+                                switch(nextHeader) {
+                                case HopByHopOption.DISPATCH:
+                                    HopByHopOption hbh = new HopByHopOption();
+                                    hbh.parsePacketData(ipPacket);
+                                    ipPacket.setIPPayload(hbh);
+                                    extHeader = hbh;
+                                    nextHeader = hbh.getNextHeader();
+                                    break;
+                                case UDPPacket.DISPATCH:
+                                    if (ipPacket.getIPPayload() != null && ipPacket.getIPPayload() instanceof UDPPacket) {
+                                        /* All done ? */
+                                        System.out.println("All done - UDP already part of payload?");
+                                    } else {
+                                        UDPPacket udpPacket = new UDPPacket();
+                                        udpPacket.parsePacketData(ipPacket);
+                                        if (extHeader != null) {
+                                            extHeader.setNext(udpPacket);
+                                        } else {
+                                            ipPacket.setIPPayload(udpPacket);
+                                        }
+                                        System.out.println("UDP Packet handled...");
+                                        udpPacket.printPacket(System.out);
+                                        more = false;
+                                    }
+                                    break;
+                                default:
+                                    more = false;
+                                }
                             }
                         }
                     } 

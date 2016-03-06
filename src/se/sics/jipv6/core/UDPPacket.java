@@ -44,7 +44,7 @@ import se.sics.jipv6.util.Utils;
 
 public class UDPPacket implements IPPayload {
 
-    public final static boolean DEBUG = false;
+    public final static boolean DEBUG = true;
   public final static int DISPATCH = 17;
 
   int sourcePort;
@@ -143,6 +143,7 @@ public class UDPPacket implements IPPayload {
     packet.setData(6, (byte) 0);
     packet.setData(7, (byte) 0);
     byte[] data = packet.getPayload();
+    packet.payloadLen = data.length;
     int sum = packet.upperLayerHeaderChecksum();
     sum = IPv6Packet.checkSum(sum, data, data.length);
     sum = (~sum) & 0xffff;

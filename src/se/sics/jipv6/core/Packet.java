@@ -55,6 +55,10 @@ public class Packet {
   /* current position of packet data cursor */
   int currentPos = 0;
 
+  public int getPos() {
+      return currentPos;
+  }
+  
   public void setBytes(byte[] data) {
     packetData = data;
     currentPos = 0;
@@ -66,6 +70,14 @@ public class Packet {
     packetData = payload;
     /* reset cursor in this case !!! */
     currentPos = 0;
+  }
+
+  /* This will replace any data after the specific position with the data array */
+  public void setBytePayload(byte[] data) {
+      byte[] newData = new byte[data.length + currentPos];
+      System.arraycopy(packetData, 0, newData, 0, currentPos);
+      System.arraycopy(data, 0, newData, currentPos, data.length);
+      packetData = newData;
   }
   
   public void appendBytes(byte[] data) {
@@ -118,14 +130,34 @@ public class Packet {
     return attributes.get(name);
   }
 
+  public String addressToString(byte[] addr) {
+      StringBuilder addrStr = new StringBuilder();
+      for(int i = 0; i < addr.length; i++) {
+          if (i > 0) {
+              addrStr.append(':');
+          }
+          addrStr.append(String.format("%02x", addr[i] & 0xff));
+      }
+      return addrStr.toString();
+  }
+  
   public byte[] getLinkSource() {
     return (byte[]) attributes.get(LL_SOURCE);
+  }
+  
+  public String getLinkSourceAsString() {
+      return addressToString(getLinkSource());
   }
 
   public byte[] getLinkDestination() {
     return (byte[]) attributes.get(LL_DESTINATION);
   }
 
+  public String getLinkDestinationAsString() {
+      return addressToString(getLinkDestination());
+  }
+
+  
   public int get32(int pos) {
     pos = currentPos + pos;
     if (packetData.length >= pos + 3) {
@@ -203,8 +235,25 @@ public class Packet {
     System.arraycopy(packetData, tPos, dst, dstPos, len);
   }
 
+  /* copies bytes from currentPos + pos to the given array full length */
+  public void copy(int pos, byte[] dst, int dstPos) {
+    // TODO Auto-generated method stub
+    int tPos = pos + currentPos;
+    int len = getPayloadLength()  - pos;
+    System.out.println("Copying data: " + tPos + " Len: " + len);
+    System.arraycopy(packetData, tPos, dst, dstPos, len);
+  }
+
+  
   public void setData(int pos, byte val) {
     packetData[currentPos + pos] = val;
+  }
+  
+  public void printPayload() {
+      for(int i = currentPos; i < packetData.length; i++) {
+          System.out.printf("%02x", packetData[i] & 0xff);
+      }
+      System.out.println();
   }
   
   public void printPacket() {

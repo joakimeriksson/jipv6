@@ -1,7 +1,5 @@
 package se.sics.jipv6.core;
 
-import java.util.HashMap;
-
 public class HC06Packeter implements IPPacketer {
 
     public final static int SICSLOWPAN_UDP_PORT_MIN                     = 0xF0B0;
@@ -52,14 +50,8 @@ public class HC06Packeter implements IPPacketer {
 
     private static final boolean DEBUG = true;
 
-    class FragmentContext {
-        int tag;
-        int size;
-        byte[] data;
-    }
-    
-    private HashMap<String, FragmentContext> fragmentMap = new HashMap<String, FragmentContext>();
-    
+    private LoWPANFragmenter fragmenter = new LoWPANFragmenter();
+        
     /**
      * \brief check whether we can compress the IID in
      * address to 16 bits.
@@ -413,25 +405,29 @@ public class HC06Packeter implements IPPacketer {
         return 0;
     }
 
-    public void parsePacketData(IPv6Packet packet) {
-        int data = packet.getData(0);
-        
-        if ((data & 0xf8) == SICSLOWPAN_DISPATCH_FRAG1) {
-            /* This is a first fragment */
-            int fragSize = packet.get16(0) & 0x7ff;
-            int fragTag = packet.get16(2);
-            System.out.printf("First Fragment found: size:%d tag:%d\n", fragSize, fragTag);
+    public boolean parsePacketData(IPv6Packet packet) {
+        int headerSize = 0;
+        int compressedHeaderSize = 0;
+        if ((packet.getData(0) & 0xf8) == SICSLOWPAN_DISPATCH_FRAG1) {
+            /* first fragment need to decompress first to get "size" diff. */
             packet.incPos(4);
-        } else if ((data & 0xf8) == SICSLOWPAN_DISPATCH_FRAGN) {
-            int fragSize = packet.get16(0) & 0x7ff;
-            int fragTag = packet.get16(2);    
-            int fragOffset = packet.getData(4) * 8;
-            System.out.printf("N Fragment found: size:%d tag:%d offset:%d\n", fragSize, fragTag, fragOffset);
-            packet.incPos(5);
-            /* here we should handle appending the packet data to the fragment buffers... */
-            return;
+            int pos = packet.currentPos;
+            headerSize = decompress(packet);
+            compressedHeaderSize = packet.currentPos - pos;
+            System.out.println("HDR Size: " + headerSize + " Compr:" + compressedHeaderSize);
+            packet.currentPos = pos - 4;
+        }
+                
+        if (!fragmenter.handleFragment(packet, headerSize, compressedHeaderSize)) {
+            /* fragment - and not a complete packet */
+            return false;
         }
         
+        return decompress(packet) != 0;
+    }
+    
+   public int decompress(IPv6Packet packet) {       
+        int headerSize = 40;
         
         /* Handle "uncompression" */
         int cid = (packet.getData(1) >> 7) & 0x01;
@@ -670,7 +666,7 @@ public class HC06Packeter implements IPPacketer {
                 }
             }
         }
-
+        
         /* Next header processing - continued */
         if((packet.getData(0) & SICSLOWPAN_IPHC_NH_C) != 0) {
             /* TODO: check if this is correct in hc-06 */
@@ -702,6 +698,7 @@ public class HC06Packeter implements IPPacketer {
                 udp.sourcePort = srcPort;
                 udp.destinationPort = destPort;
                 udp.checkSum = checkSum;
+                headerSize += 8;
             }
         }
 
@@ -728,13 +725,10 @@ public class HC06Packeter implements IPPacketer {
             IPv6Packet.printAddress(System.out, packet.sourceAddress);
             System.out.print("Dst Addr: ");
             IPv6Packet.printAddress(System.out, packet.destAddress);
-            System.out.println();
         }
         
         packet.incPos(hc06_ptr);
         
-        packet.payloadLen = packet.getPayloadLength();
-
         if (udp != null) {
             /* if we have a udp payload we already have the udp headers in place */
             /* the rest is only the payload */
@@ -745,5 +739,6 @@ public class HC06Packeter implements IPPacketer {
             udp.doVirtualChecksum(packet);
             packet.setIPPayload(udp);
         }
+        return headerSize;
     }
 }

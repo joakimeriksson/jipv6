@@ -171,13 +171,13 @@ public class IPv6Packet extends Packet implements IPPacketer {
   /* this is for setting raw packet data */
 //TODO: should not take an argument here??? it should parse its own
 // data array???
-  public void parsePacketData(IPv6Packet packet) {
+  public boolean parsePacketData(IPv6Packet packet) {
     version = (packet.getData(0) & 0xff) >> 4;
     if (DEBUG) {
       System.out.println("IPv6Packet: version: " + version);
     }
     if (version != 6) {
-      return;
+      return false;
     }
     trafficClass = ((packet.getData(0) & 0x0f)<<4) +
     ((packet.getData(1) & 0xff) >> 4);
@@ -191,6 +191,7 @@ public class IPv6Packet extends Packet implements IPPacketer {
     packet.copy(24, destAddress, 0, 16);
     // move position 40 bytes forward for handling next headers / payload
     packet.incPos(40);
+    return true;
   }
 
   public static void set32(byte[] data, int pos, long value) {
@@ -269,30 +270,33 @@ public class IPv6Packet extends Packet implements IPPacketer {
     return nextHeader;
   }
 
+  public void copyHeader(byte[] dataPacket, int length) {
+      dataPacket[0] = (byte) (0x60 | (trafficClass >> 4) & 0x0f);
+      dataPacket[1] = (byte) (((trafficClass & 0xf) << 4) |
+          ((flowLabel >> 16) & 0xf));
+      dataPacket[2] = (byte) ((trafficClass >> 8) & 0xff);
+      dataPacket[3] = (byte) (trafficClass & 0xff);
+      
+      dataPacket[4] = (byte) ((length >> 8) & 0xff);
+      dataPacket[5] = (byte) (length & 0xff);
+      
+      dataPacket[6] = (byte) (nextHeader & 0xff);
+      dataPacket[7] = (byte) (hopLimit & 0xff);
+      
+      int pos = 8;
+      System.arraycopy(getSourceAddress(), 0, dataPacket, pos, 16);
+      pos += 16;
+      System.arraycopy(getDestinationAddress(), 0, dataPacket, pos, 16);
+      pos += 16;
+  }
   // TODO: should not take an argument here - should be this packet
   // that should be generating the data???
   public byte[] generatePacketData(IPv6Packet packet) {
     byte[] payload = ipPayload.generatePacketData(packet); 
     int size = 40 + payload.length;
     byte[] dataPacket = new byte[size];
-
-    dataPacket[0] = (byte) (0x60 | (trafficClass >> 4) & 0x0f);
-    dataPacket[1] = (byte) (((trafficClass & 0xf) << 4) |
-        ((flowLabel >> 16) & 0xf));
-    dataPacket[2] = (byte) ((trafficClass >> 8) & 0xff);
-    dataPacket[3] = (byte) (trafficClass & 0xff);
+    copyHeader(dataPacket, payload.length);
     
-    dataPacket[4] = (byte) ((payload.length >> 8) & 0xff);
-    dataPacket[5] = (byte) (payload.length & 0xff);
-    
-    dataPacket[6] = (byte) (nextHeader & 0xff);
-    dataPacket[7] = (byte) (hopLimit & 0xff);
-    
-    int pos = 8;
-    System.arraycopy(packet.getSourceAddress(), 0, dataPacket, pos, 16);
-    pos += 16;
-    System.arraycopy(packet.getDestinationAddress(), 0, dataPacket, pos, 16);
-    pos += 16;
     System.arraycopy(payload, 0, dataPacket, 40, payload.length);
     return dataPacket;
   }
@@ -359,6 +363,5 @@ public class IPv6Packet extends Packet implements IPPacketer {
     packet.parsePacketData(packet);
     packet.printPacket(System.out);
   }
-
 
 }

@@ -360,7 +360,7 @@ public class HC01Packeter implements IPPacketer {
   }
 
   
-  public void parsePacketData(IPv6Packet packet) {
+  public boolean parsePacketData(IPv6Packet packet) {
     /* first two is ... */
     UDPPacket udp = null;
     int pos = 2;
@@ -423,7 +423,7 @@ public class HC01Packeter implements IPPacketer {
     case IPHC_SAM_0:
       if(context == null) {
         System.out.println("sicslowpan uncompress_hdr: error context not found\n");
-        return;
+        return false;
       }
       /* set hi address as prefix from context */
       System.arraycopy(context.prefix, 0, packet.sourceAddress, 0, 8);
@@ -438,7 +438,7 @@ public class HC01Packeter implements IPPacketer {
         /* unicast address */
         if(context == null) {
           System.out.println("sicslowpan uncompress_hdr: error context not found\n");
-          return;
+          return false;
         }
         /* set hi address as prefix from context */
         System.arraycopy(context.prefix, 0, packet.sourceAddress, 0, 8);
@@ -459,7 +459,7 @@ public class HC01Packeter implements IPPacketer {
     case IPHC_SAM_64:
       if(context == null) {
         System.out.println("sicslowpan uncompress_hdr: error context not found\n");
-        return;
+        return false;
       }
       /* copy prefix from context */
       System.arraycopy(context.prefix, 0, packet.sourceAddress, 0, 8);
@@ -486,7 +486,7 @@ public class HC01Packeter implements IPPacketer {
     case IPHC_DAM_0:
       if(context == null) {
         System.out.println("sicslowpan uncompress_hdr: error context not found\n");
-        return;
+        return false;
       }
       /* copy prefix from context */
       System.arraycopy(context.prefix, 0, packet.destAddress, 0, 8);
@@ -501,7 +501,7 @@ public class HC01Packeter implements IPPacketer {
         /* unicast address */
         if(context == null) {
           System.out.println("sicslowpan uncompress_hdr: error context not found\n");
-          return;
+          return false;
         }
         System.arraycopy(context.prefix, 0, packet.destAddress, 0, 8);
         /* copy 6 NULL bytes then 2 last bytes of IID */
@@ -521,7 +521,7 @@ public class HC01Packeter implements IPPacketer {
     case IPHC_DAM_64:
       if(context == null) {
         System.out.println("sicslowpan uncompress_hdr: error context not found\n");
-        return;
+        return false;
       }
       /* copy prefix from context */
       System.arraycopy(context.prefix, 0, packet.destAddress, 0, 8);
@@ -561,7 +561,7 @@ public class HC01Packeter implements IPPacketer {
           break;
         default:
           System.out.println("sicslowpan uncompress_hdr: error unsupported UDP compression\n");
-        return;
+        return false;
         }
         udp = new UDPPacket();
         udp.sourcePort = srcPort;
@@ -602,6 +602,7 @@ public class HC01Packeter implements IPPacketer {
       udp.doVirtualChecksum(packet);
       packet.setIPPayload(udp);
     }
+    return true;
   }
   
   private boolean isMulticastCompressable(byte[] address) {
