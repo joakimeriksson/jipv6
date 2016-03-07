@@ -40,9 +40,13 @@ public class HC06Packeter implements IPPacketer {
     public final static int SICSLOWPAN_IPHC_DAM_10                      = 0x02;
     public final static int SICSLOWPAN_IPHC_DAM_11                      = 0x03;
 
-    private static final int SICSLOWPAN_NHC_UDP_ID = 0xf8;
-    private static final int SICSLOWPAN_NHC_UDP_C  =                      0xFB;
-    private static final int SICSLOWPAN_NHC_UDP_I =                        0xF8;
+    private static final int SICSLOWPAN_NHC_UDP_MASK                    = 0xf8;
+    private static final int SICSLOWPAN_NHC_UDP_ID                      = 0xf0;
+    private static final int SICSLOWPAN_NHC_UDP_CS_P00  =                 0xf0;
+    private static final int SICSLOWPAN_NHC_UDP_CS_P01 =                  0xf1;
+    private static final int SICSLOWPAN_NHC_UDP_CS_P10 =                  0xf2;
+    private static final int SICSLOWPAN_NHC_UDP_CS_P11 =                  0xf3;
+    private static final int SICSLOWPAN_NHC_UDP_CHECKSUM_COMPR =          0x04;
 
     public final static int PROTO_UDP = 17;
     public final static int PROTO_TCP = 6;
@@ -483,6 +487,8 @@ public class HC06Packeter implements IPPacketer {
             packet.nextHeader = packet.getData(hc06_ptr);
             System.out.println("### Setting next header to: " + packet.nextHeader);
             hc06_ptr += 1;
+        } else {
+            System.out.println("Next header compressed!");
         }
 
         /* Hop limit */
@@ -671,27 +677,29 @@ public class HC06Packeter implements IPPacketer {
         if((packet.getData(0) & SICSLOWPAN_IPHC_NH_C) != 0) {
             /* TODO: check if this is correct in hc-06 */
             /* The next header is compressed, NHC is following */
-            if((packet.getData(hc06_ptr) & 0xFC) == SICSLOWPAN_NHC_UDP_ID) {
+            if((packet.getData(hc06_ptr) & SICSLOWPAN_NHC_UDP_MASK) == SICSLOWPAN_NHC_UDP_ID) {
                 packet.nextHeader = PROTO_UDP;
-                switch(packet.getData(hc06_ptr)) {
-                case (byte) SICSLOWPAN_NHC_UDP_C:
-                    /* 1 byte for NHC, 1 byte for ports, 2 bytes chksum */
-                    srcPort = SICSLOWPAN_UDP_PORT_MIN + (packet.getData(hc06_ptr + 1) >> 4);
-                destPort = SICSLOWPAN_UDP_PORT_MIN + (packet.getData(hc06_ptr + 1) & 0x0F);
-                checkSum = ((packet.getData(hc06_ptr + 2) & 0xff) << 8) +
-                (packet.getData(hc06_ptr + 3) & 0xff);
-                hc06_ptr += 4;
-                break;
-                case (byte) SICSLOWPAN_NHC_UDP_I:
-                    /* 1 byte for NHC, 4 byte for ports, 2 bytes chksum */
+                boolean checksumCompressed = (packet.getData(hc06_ptr) & SICSLOWPAN_NHC_UDP_CHECKSUM_COMPR) != 0;
+                switch(packet.getData(hc06_ptr) & SICSLOWPAN_NHC_UDP_CS_P11) {
+                case SICSLOWPAN_NHC_UDP_CS_P00:
+                    /* 1 byte for NHC, 4 byte for ports */
                     srcPort = packet.get16(hc06_ptr + 1);
-                destPort = packet.get16(hc06_ptr + 3);
-                checkSum = ((packet.getData(hc06_ptr + 5) & 0xff) << 8) +
-                (packet.getData(hc06_ptr + 6) & 0xff);
-                hc06_ptr += 7;
+                    destPort = packet.get16(hc06_ptr + 3);
+                    hc06_ptr += 5;
                 break;
+/* TODO: ADD P01 / P10 also!!!! */
+                case SICSLOWPAN_NHC_UDP_CS_P11:
+                    /* 1 byte for NHC, 1 byte for ports */
+                    srcPort = SICSLOWPAN_UDP_PORT_MIN + (packet.getData(hc06_ptr + 1) >> 4);
+                    destPort = SICSLOWPAN_UDP_PORT_MIN + (packet.getData(hc06_ptr + 1) & 0x0F);
+                    hc06_ptr += 2;
+                    break;                    
                 default:
                     System.out.println("sicslowpan uncompress_hdr: error unsupported UDP compression\n");
+                }
+                if (!checksumCompressed) {
+                    checkSum = ((packet.getData(hc06_ptr) & 0xff) << 8) +
+                            (packet.getData(hc06_ptr + 1) & 0xff);
                 }
 
                 udp = new UDPPacket();
@@ -699,6 +707,8 @@ public class HC06Packeter implements IPPacketer {
                 udp.destinationPort = destPort;
                 udp.checkSum = checkSum;
                 headerSize += 8;
+            } else {
+                System.out.printf("Unsupported next header compression:%02x\n",(packet.getData(hc06_ptr) & 0xFC));
             }
         }
 

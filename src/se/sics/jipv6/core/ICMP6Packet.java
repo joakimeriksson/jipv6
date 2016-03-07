@@ -218,6 +218,21 @@ public class ICMP6Packet implements IPPayload {
     /* ICMP can not have payload ?! */
   }
   
+  public static ICMP6Packet parseICMP6Packet(IPv6Packet packet) {
+      int type = packet.getData(0) & 0xff;
+      ICMP6Packet icmp6Packet;
+      if (type == RPLPacket.ICMP6_TYPE_RPL) {
+          System.out.println("*** Found RPL Packet ***");
+          icmp6Packet = new RPLPacket();
+      } else {
+          icmp6Packet = new ICMP6Packet();
+      }
+      icmp6Packet.parsePacketData(packet);
+      return icmp6Packet;
+  }
+  
+  
+  
   public void parsePacketData(IPv6Packet packet) {
     if (packet.nextHeader == 58) {
       type = packet.getData(0) & 0xff;
@@ -260,6 +275,8 @@ public class ICMP6Packet implements IPPayload {
       }
 
       byte[] data = packet.getPayload();
+      packet.payloadLen = data.length;
+      
       //System.out.println("Payloadsize: " + data.length);
       int sum = packet.upperLayerHeaderChecksum(DISPATCH);
       sum = IPv6Packet.checkSum(sum, data, data.length);

@@ -4,6 +4,8 @@ import java.io.InputStreamReader;
 
 import se.sics.jipv6.core.HC06Packeter;
 import se.sics.jipv6.core.HopByHopOption;
+import se.sics.jipv6.core.ICMP6Packet;
+import se.sics.jipv6.core.IPPayload;
 import se.sics.jipv6.core.IPv6ExtensionHeader;
 import se.sics.jipv6.core.IPv6Packet;
 import se.sics.jipv6.core.Packet;
@@ -13,9 +15,34 @@ import se.sics.jipv6.util.Utils;
 
 public class TestSniff {
     /* Run JIPv6 over TUN on linux of OS-X */
+
+    /* MAC packet received */
+    public void analyzePacket(Packet packet) {
+        
+    }
+    
+    /* IPv6 packet received */
+    public void analyzeIPPacket(IPv6Packet packet) {
+        IPPayload payload = packet.getIPPayload();
+        while (payload instanceof IPv6ExtensionHeader) {
+            System.out.println("Analyzer - EXT HDR:");
+            payload.printPacket(System.out);
+            payload = ((IPv6ExtensionHeader) payload).getNext();
+        }
+        if (payload instanceof UDPPacket) {
+            System.out.println("Analyzer - UDP Packet");
+            if (packet.isLinkLocal(packet.getDestinationAddress())) {
+                System.out.println("*** Link Local Message: Possibly Sleep???");
+            } else {
+                System.out.println("*** Message to/from Fiona");                
+            }
+        }
+    }
+    
     
     
     public static void main(String[] args) {
+        TestSniff analyzer = new TestSniff();
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
         String line;
         IEEE802154Handler i154Handler = new IEEE802154Handler();
@@ -34,6 +61,10 @@ public class TestSniff {
                     i154Handler.packetReceived(packet);
 //                    packet.printPacket();
 //                    i154Handler.printPacket(System.out, packet);
+                    if (analyzer != null) {
+                        analyzer.analyzePacket(packet);
+                    }
+                    
                     if (packet.getPayloadLength() > 1 && 
                             packet.getAttributeAsInt(IEEE802154Handler.PACKET_TYPE) == IEEE802154Handler.DATAFRAME) {
                         IPv6Packet ipPacket = new IPv6Packet(packet);
@@ -59,6 +90,7 @@ public class TestSniff {
                                     if (ipPacket.getIPPayload() != null && ipPacket.getIPPayload() instanceof UDPPacket) {
                                         /* All done ? */
                                         System.out.println("All done - UDP already part of payload?");
+                                        more = false;
                                     } else {
                                         UDPPacket udpPacket = new UDPPacket();
                                         udpPacket.parsePacketData(ipPacket);
@@ -72,9 +104,22 @@ public class TestSniff {
                                         more = false;
                                     }
                                     break;
+                                case ICMP6Packet.DISPATCH:
+                                    ICMP6Packet icmp6Packet = ICMP6Packet.parseICMP6Packet(ipPacket);
+                                    if (extHeader != null) {
+                                        extHeader.setNext(icmp6Packet);
+                                    } else {
+                                        ipPacket.setIPPayload(icmp6Packet);
+                                    }
+                                    System.out.println("ICMP6 packet handled...");
+                                    icmp6Packet.printPacket(System.out);
+                                    more = false;
                                 default:
                                     more = false;
                                 }
+                            }
+                            if (analyzer != null) {
+                                analyzer.analyzeIPPacket(ipPacket);
                             }
                         }
                     } 
