@@ -337,7 +337,7 @@ public class Encap {
             IVMode[] values = values();
             // Quick lookup when possible
             if (mode >= 0 && mode < values.length && values[mode].mode == mode) {
-                return values[mode - 1];
+                return values[mode];
             }
             for (IVMode p : values) {
                 if (p.mode == mode) {

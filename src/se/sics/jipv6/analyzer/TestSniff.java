@@ -34,7 +34,7 @@ public class TestSniff {
     public void connect(String host) throws UnknownHostException, IOException {
         serialRadio = new SerialRadioConnection();
         serialRadio.connect(host);
-        serialRadio.send("?C");
+        serialRadio.send("!C" + (char)0x26);
     }
     
     public void packetData(byte[] data) {

@@ -37,6 +37,11 @@ public class SerialRadioConnection implements Runnable {
         if (e == Error.OK) {
             System.out.println("ENCAP OK! Type:" + encap.getPayloadTypeAsString());
             /* Send of data to something?? */
+            byte payload[] = encap.getPayloadData();
+            System.out.println("Payload (len = " + payload.length + ")");
+            for(int i = 0; i < payload.length; i++) {
+                System.out.printf("%02x", payload[i]);
+            }
         }
     }
     
@@ -56,7 +61,10 @@ public class SerialRadioConnection implements Runnable {
                         buffer[pos++] = (byte) SLIP_END;
                     } else if (data == SLIP_ESC_ESC) {
                         buffer[pos++] = (byte) SLIP_ESC;                    
+                    } else {
+                        System.out.println("Slip Error?");
                     }
+                    esc = false;
                 } else {
                     if (data == SLIP_END) {
                         System.out.println("SLIP Frame received - len:" + pos);
@@ -65,6 +73,7 @@ public class SerialRadioConnection implements Runnable {
                     } else if (data == SLIP_ESC) {
                         esc = true;
                     } else {
+//                        System.out.println("Add byte to buffer: " + data);
                         buffer[pos++] = (byte) data;
                     }
                 }
