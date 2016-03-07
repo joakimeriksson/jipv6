@@ -32,6 +32,7 @@
 
 package se.sics.jipv6.yal;
 
+import java.util.Arrays;
 import java.util.zip.CRC32;
 
 /**
@@ -48,11 +49,13 @@ public class Encap {
     private IVMode initVectorMode;
     private int payloadOffset;
     private byte[] payloadData;
+    private boolean crcEnabled = false;
     
     public static Encap createSerial(byte[] serial) {
         Encap encap = new Encap();
         encap.payloadTypeCode = PayloadType.SERIAL.getType();
         encap.fingerPrintMode = FingerPrintMode.LENOPT;
+        encap.crcEnabled = true;
         encap.initVectorMode = IVMode.NONE;
         encap.payloadOffset = 0;
         encap.payloadData = serial;
@@ -72,7 +75,7 @@ public class Encap {
         data[2] = (byte) errorCode;
         data[3] = (byte) (fingerPrintMode.getMode() << 4 | initVectorMode.getMode());
         data[4] = (byte) 0;
-        data[5] = (byte) 1; /* CRC - enabled */
+        data[5] = (byte) (crcEnabled ? 1 : 0); /* CRC - enabled */
         data[6] = (byte) (payloadData.length / 256);
         data[7] = (byte) (payloadData.length & 255);
         System.arraycopy(payloadData, 0, data, 8, payloadData.length);
@@ -110,6 +113,13 @@ public class Encap {
             return Error.BAD_FINGERPRINT_MODE;
         }
         this.payloadOffset += this.fingerPrintMode.getSize();
+        if(this.fingerPrintMode == FingerPrintMode.LENOPT) {
+            /* check if CRC is there - bit 1 of 16 (4 / 5) is CRC*/
+            /* no support for SEQNO at the moment */
+            if ((data[5] == 1)) {
+                this.crcEnabled = true;
+            }
+        }
 
         int initVectorModeCode = data[3] & 0xf;
         this.initVectorMode = IVMode.getByMode(initVectorModeCode);
@@ -172,7 +182,8 @@ public class Encap {
     }
 
     public byte[] getPayloadData() {
-        return this.payloadData;
+        System.out.println("Get payload: offset:" + payloadOffset);
+        return Arrays.copyOfRange(payloadData, payloadOffset, payloadData.length - (crcEnabled ? 4 : 0));
     }
 
     public enum PayloadType {

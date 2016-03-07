@@ -12,7 +12,6 @@ import se.sics.jipv6.yal.Encap.Error;
 
 public class SerialRadioConnection implements Runnable {
 
-    
     private static int SLIP_END = 0300;
     private static int SLIP_ESC = 0333;
     private static int SLIP_ESC_END = 0334;
@@ -38,6 +37,7 @@ public class SerialRadioConnection implements Runnable {
             System.out.println("ENCAP OK! Type:" + encap.getPayloadTypeAsString());
             /* Send of data to something?? */
             byte payload[] = encap.getPayloadData();
+            payload = Arrays.copyOfRange(payload, 2, payload.length);
             System.out.println("Payload (len = " + payload.length + ")");
             for(int i = 0; i < payload.length; i++) {
                 System.out.printf("%02x", payload[i]);
