@@ -1,3 +1,4 @@
+package se.sics.jipv6.analyzer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -16,61 +17,10 @@ import se.sics.jipv6.util.Utils;
 
 public class TestSniff {
     /* Run JIPv6 over TUN on linux of OS-X */
-
-    /* MAC packet received */
-    public void analyzePacket(Packet packet) {
-        
-    }
     
-    /* IPv6 packet received */
-    public void analyzeIPPacket(IPv6Packet packet) {
-        IPPayload payload = packet.getIPPayload();
-        while (payload instanceof IPv6ExtensionHeader) {
-            System.out.println("Analyzer - EXT HDR:");
-            payload.printPacket(System.out);
-            payload = ((IPv6ExtensionHeader) payload).getNext();
-        }
-        if (payload instanceof UDPPacket) {
-            System.out.println("Analyzer - UDP Packet");
-            if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
-                System.out.print("*** Link Local Message: Possibly Sleep from:");
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                System.out.println();
-            } else {
-                System.out.println("*** Message to/from Fiona");
-            }
-        } else if (payload instanceof RPLPacket) {
-            RPLPacket rpl = (RPLPacket) payload;
-            switch (rpl.getCode()) {
-            case RPLPacket.RPL_DIS:
-                if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
-                    /* ... */
-                    System.out.print("*** Probe or repair from ");
-                    IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                    System.out.println();
-                } else {
-                    System.out.print("*** Warning - broadcast DIS!!! from");
-                    IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                    System.out.println();
-                }
-                break;
-            case RPLPacket.RPL_DIO:
-                break;
-            }
-        } else if (payload instanceof ICMP6Packet) {
-            ICMP6Packet icmp6 = (ICMP6Packet) payload;
-            if (icmp6.getType() == ICMP6Packet.NEIGHBOR_SOLICITATION) {
-                System.out.print("*** Warning - Neighbor solicitation!!! from: ");
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                System.out.println();
-            }
-        }
-    }
-    
-    
-    
-    public static void main(String[] args) {
-        TestSniff analyzer = new TestSniff();
+    public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        Class<?> paClass = Class.forName(args[0]);
+        PacketAnalyzer analyzer = (PacketAnalyzer) paClass.newInstance();
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
         String line;
         IEEE802154Handler i154Handler = new IEEE802154Handler();

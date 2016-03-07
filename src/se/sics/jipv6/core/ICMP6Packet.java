@@ -237,7 +237,6 @@ public class ICMP6Packet implements IPPayload {
   
   
   public void parsePacketData(IPv6Packet packet) {
-    if (packet.nextHeader == 58) {
       type = packet.getData(0) & 0xff;
       code = packet.getData(1) & 0xff;
       checksum = ((packet.getData(2) & 0xff) << 8) | packet.getData(3) & 0xff;
@@ -248,50 +247,49 @@ public class ICMP6Packet implements IPPayload {
       switch (type) {
       case ECHO_REQUEST:
       case ECHO_REPLY:
-        id = packet.get16(4);
-        seqNo = packet.get16(6);
-        int dataLen = packet.getPayloadLength() - 8;
-        if (dataLen > 0) {
-          echoData = new byte[dataLen];
-          packet.copy(8, echoData, 0, dataLen);
-        }
-        break;
+          id = packet.get16(4);
+          seqNo = packet.get16(6);
+          int dataLen = packet.getPayloadLength() - 8;
+          if (dataLen > 0) {
+              echoData = new byte[dataLen];
+              packet.copy(8, echoData, 0, dataLen);
+          }
+          break;
       case NEIGHBOR_SOLICITATION:
       case NEIGHBOR_ADVERTISEMENT:
-        if (type == NEIGHBOR_ADVERTISEMENT) {
-          flags = packet.getData(4) & 0xff;
-        }
-        targetAddress = new byte[16];
-        packet.copy(8, targetAddress, 0, 16);
-        handleOptions(packet, 24);
-        break;
+          if (type == NEIGHBOR_ADVERTISEMENT) {
+              flags = packet.getData(4) & 0xff;
+          }
+          targetAddress = new byte[16];
+          packet.copy(8, targetAddress, 0, 16);
+          handleOptions(packet, 24);
+          break;
       case ROUTER_SOLICITATION:
-        break;
+          break;
       case ROUTER_ADVERTISEMENT:
-        hopLimit = packet.getData(4);
-        autoConfigFlags = packet.getData(5);
-        routerLifetime = packet.get16(6);
-        reachableTime = packet.get32(8);
-        retransmissionTimer = packet.get32(12);
-        handleOptions(packet, 16);
-        break;
+          hopLimit = packet.getData(4);
+          autoConfigFlags = packet.getData(5);
+          routerLifetime = packet.get16(6);
+          reachableTime = packet.get32(8);
+          retransmissionTimer = packet.get32(12);
+          handleOptions(packet, 16);
+          break;
       }
 
       byte[] data = packet.getPayload();
       packet.payloadLen = data.length;
-      
+
       //System.out.println("Payloadsize: " + data.length);
       int sum = packet.upperLayerHeaderChecksum(DISPATCH);
       sum = IPv6Packet.checkSum(sum, data, data.length);
       sum = (~sum) & 0xffff;
       /* TODO: here we should tag packet as failed !!! */
       if (sum == checksum) {
-        //System.out.println("ICMPv6: Checksum matches!!!");
+          //System.out.println("ICMPv6: Checksum matches!!!");
       } else {
-        //System.out.println("ICMPv6: Checksum error: " + 
-        //    Utils.hex16(checksum) + " <?> " + Utils.hex16(sum));
+          //System.out.println("ICMPv6: Checksum error: " + 
+          //    Utils.hex16(checksum) + " <?> " + Utils.hex16(sum));
       }
-    }
   }
 
   /* create generic options array instead... */
