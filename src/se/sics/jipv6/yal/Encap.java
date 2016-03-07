@@ -32,6 +32,8 @@
 
 package se.sics.jipv6.yal;
 
+import java.util.zip.CRC32;
+
 /**
  *
  */
@@ -46,7 +48,48 @@ public class Encap {
     private IVMode initVectorMode;
     private int payloadOffset;
     private byte[] payloadData;
-
+    
+    public static Encap createSerial(byte[] serial) {
+        Encap encap = new Encap();
+        encap.payloadTypeCode = PayloadType.SERIAL.getType();
+        encap.fingerPrintMode = FingerPrintMode.LENOPT;
+        encap.initVectorMode = IVMode.NONE;
+        encap.payloadOffset = 0;
+        encap.payloadData = serial;
+        return encap;
+    }
+    
+    /* Only handles serial with CRC at the moment */
+    public byte[] generateBytes() {
+        int encapSize = 4;
+        if(fingerPrintMode == FingerPrintMode.LENOPT) {
+            /* Always CRC? */
+            encapSize += 8; /* 4 byte opt + len  + 4 byte CRC */
+        }
+        byte[] data = new byte[payloadData.length + encapSize];
+        data[0] = (byte) (version << 4);
+        data[1] = (byte) payloadTypeCode;
+        data[2] = (byte) errorCode;
+        data[3] = (byte) (fingerPrintMode.getMode() << 4 | initVectorMode.getMode());
+        data[4] = (byte) 0;
+        data[5] = (byte) 1; /* CRC - enabled */
+        data[6] = (byte) (payloadData.length / 256);
+        data[7] = (byte) (payloadData.length & 255);
+        System.arraycopy(payloadData, 0, data, 8, payloadData.length);
+        
+        CRC32 crc = new CRC32();
+        crc.update(data, 0, 8);
+        crc.update(payloadData);
+        
+        int pos = 8 + payloadData.length; 
+        data[pos] = (byte) (crc.getValue() >> 24);
+        data[pos + 1] = (byte) (crc.getValue() >> 16);
+        data[pos + 2] = (byte) (crc.getValue() >> 8);
+        data[pos + 3] = (byte) (crc.getValue() >> 0);
+        
+        return data;
+    }
+    
     public Error parseEncap(byte[] data) {
         if (data == null || data.length < 4) {
             return Error.SHORT;

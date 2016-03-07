@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 public class LoWPANFragmenter {
 
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     
     class FragmentContext {
         int tag;
