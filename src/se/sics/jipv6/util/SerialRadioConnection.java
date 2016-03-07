@@ -12,6 +12,8 @@ import se.sics.jipv6.yal.Encap.Error;
 
 public class SerialRadioConnection implements Runnable {
 
+    private static boolean DEBUG = false;
+    
     private static int SLIP_END = 0300;
     private static int SLIP_ESC = 0333;
     private static int SLIP_ESC_END = 0334;
@@ -22,6 +24,16 @@ public class SerialRadioConnection implements Runnable {
     
     byte[] buffer = new byte[1000];
     int pos;
+
+    public interface PacketListener {
+        public void packetReceived(byte[] data);
+    }
+    
+    PacketListener listener;
+    
+    public SerialRadioConnection(PacketListener listener) {
+        this.listener = listener;
+    }
     
     public void connect(String host) throws UnknownHostException, IOException {
         socket = new Socket(host, 9999);
@@ -34,13 +46,18 @@ public class SerialRadioConnection implements Runnable {
         Encap encap = new Encap();
         Error e = encap.parseEncap(slipFrame);
         if (e == Error.OK) {
-            System.out.println("ENCAP OK! Type:" + encap.getPayloadTypeAsString());
             /* Send of data to something?? */
             byte payload[] = encap.getPayloadData();
             payload = Arrays.copyOfRange(payload, 2, payload.length);
-            System.out.println("Payload (len = " + payload.length + ")");
-            for(int i = 0; i < payload.length; i++) {
-                System.out.printf("%02x", payload[i]);
+            if (DEBUG) {
+                System.out.println("Payload (len = " + payload.length + ")");
+                for(int i = 0; i < payload.length; i++) {
+                    System.out.printf("%02x", payload[i]);
+                }
+                System.out.println();
+            }
+            if (listener != null) {
+                listener.packetReceived(payload);
             }
         }
     }

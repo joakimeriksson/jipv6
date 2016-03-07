@@ -49,6 +49,7 @@ public class Encap {
     private IVMode initVectorMode;
     private int payloadOffset;
     private byte[] payloadData;
+    private int optLen = 0;
     private boolean crcEnabled = false;
     
     public static Encap createSerial(byte[] serial) {
@@ -113,12 +114,15 @@ public class Encap {
             return Error.BAD_FINGERPRINT_MODE;
         }
         this.payloadOffset += this.fingerPrintMode.getSize();
+        
         if(this.fingerPrintMode == FingerPrintMode.LENOPT) {
             /* check if CRC is there - bit 1 of 16 (4 / 5) is CRC*/
             /* no support for SEQNO at the moment */
             if ((data[5] == 1)) {
                 this.crcEnabled = true;
             }
+            optLen = data[6] *256 + data[7];
+            System.out.println("LEN:" + optLen);
         }
 
         int initVectorModeCode = data[3] & 0xf;
@@ -182,7 +186,6 @@ public class Encap {
     }
 
     public byte[] getPayloadData() {
-        System.out.println("Get payload: offset:" + payloadOffset);
         return Arrays.copyOfRange(payloadData, payloadOffset, payloadData.length - (crcEnabled ? 4 : 0));
     }
 
@@ -304,7 +307,7 @@ public class Encap {
             FingerPrintMode[] values = values();
             // Quick lookup when possible
             if (mode >= 0 && mode < values.length && values[mode].mode == mode) {
-                return values[mode - 1];
+                return values[mode];
             }
             for (FingerPrintMode p : values) {
                 if (p.mode == mode) {
