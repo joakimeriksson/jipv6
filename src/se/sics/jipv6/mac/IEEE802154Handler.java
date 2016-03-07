@@ -163,7 +163,7 @@ public class IEEE802154Handler extends AbstractPacketHandler {
     packet.setAttribute(PACKET_TYPE, type & 0xff);
     packet.setAttribute(PANID_COMPRESSION, panCompression);
 
-    System.out.println("802.15.4 Consumed " + pos + " bytes");
+//    System.out.println("802.15.4 Consumed " + pos + " bytes");
     dispatch(-1, packet);
   }
   

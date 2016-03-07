@@ -82,10 +82,9 @@ public class IPv6Packet extends Packet implements IPPacketer {
   }
 
 
-  public boolean isLinkLocal(byte[] destinationAddress) {
+  public static boolean isLinkLocal(byte[] destinationAddress) {
       return destinationAddress[0] == (byte) 0xfe && destinationAddress[1] == (byte) 0x80;
   }
-
   
   public IPv6Packet(IPPayload pl) {
     this();

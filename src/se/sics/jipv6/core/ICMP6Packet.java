@@ -149,6 +149,10 @@ public class ICMP6Packet implements IPPayload {
     this.type = type;
   }
 
+  public int getCode() {
+      return code;
+  }
+  
   public int getFlags() {
     return flags;
   }
@@ -222,7 +226,6 @@ public class ICMP6Packet implements IPPayload {
       int type = packet.getData(0) & 0xff;
       ICMP6Packet icmp6Packet;
       if (type == RPLPacket.ICMP6_TYPE_RPL) {
-          System.out.println("*** Found RPL Packet ***");
           icmp6Packet = new RPLPacket();
       } else {
           icmp6Packet = new ICMP6Packet();

@@ -5,6 +5,8 @@ import java.util.HashMap;
 
 public class LoWPANFragmenter {
 
+    private static final boolean DEBUG = false;
+    
     class FragmentContext {
         int tag;
         int size;
@@ -34,7 +36,7 @@ public class LoWPANFragmenter {
                 map.put("" + offset + ":" + plen, "");
                 return true;
             } else {
-                System.out.println("*** already received that part");
+                if(DEBUG) System.out.println("*** already received that part");
                 return false;
             }
         }
@@ -55,7 +57,7 @@ public class LoWPANFragmenter {
             int fragSize = packet.get16(0) & 0x7ff;
             int fragTag = packet.get16(2);
             String id = packet.getLinkDestinationAsString() + "-" + fragTag;
-            System.out.printf("First Fragment found: size:%d tag:%d ID:%s\n", fragSize, fragTag, id);
+            if (DEBUG) System.out.printf("First Fragment found: size:%d tag:%d ID:%s\n", fragSize, fragTag, id);
             packet.incPos(4);
             
             FragmentContext ctx = fragmentMap.get(id);
@@ -67,7 +69,7 @@ public class LoWPANFragmenter {
                 ctx.receivedSize += packet.getPayloadLength() + (uncomprSize - comprSize);
                 ctx.firstFragmentOffset = (uncomprSize - comprSize);
             }
-            System.out.println("Received:" + ctx.receivedSize);
+            if (DEBUG) System.out.println("Received:" + ctx.receivedSize);
             /* Fragment 1 should never be "complete" since it would not be fragmentet then? */
             return false;
         } else if ((data & 0xf8) == HC06Packeter.SICSLOWPAN_DISPATCH_FRAGN) {
@@ -75,7 +77,7 @@ public class LoWPANFragmenter {
             int fragTag = packet.get16(2);    
             int fragOffset = packet.getData(4) * 8;
             String id = packet.getLinkDestinationAsString() + "-" + fragTag;
-            System.out.printf("N Fragment found: size:%d tag:%d offset:%d ID:%s\n", fragSize, fragTag, fragOffset, id);
+            if (DEBUG) System.out.printf("N Fragment found: size:%d tag:%d offset:%d ID:%s\n", fragSize, fragTag, fragOffset, id);
             packet.incPos(5);
             /* here we should handle appending the packet data to the fragment buffers... */
             FragmentContext ctx = fragmentMap.get(id);
@@ -87,11 +89,13 @@ public class LoWPANFragmenter {
             if (ctx.copyData(packet, fragOffset)) {
                 ctx.receivedSize += packet.getPayloadLength();
             }
-            System.out.println("Received:" + ctx.receivedSize);
+            if (DEBUG) System.out.println("Received:" + ctx.receivedSize);
             if (ctx.receivedSize == ctx.size) {
-                System.out.println("**** Packet done !!!!");
+                if (DEBUG) System.out.println("**** Packet done !!!!");
                 packet.currentPos -= 5; /* back down to regular 802.15.4 header - then put a "big" packet there... */
                 ctx.setPacketPayload(packet);
+                /* remove from fragmentMap */
+                fragmentMap.remove(id);
                 return true;
             }
             return false;

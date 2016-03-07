@@ -9,6 +9,7 @@ import se.sics.jipv6.core.IPPayload;
 import se.sics.jipv6.core.IPv6ExtensionHeader;
 import se.sics.jipv6.core.IPv6Packet;
 import se.sics.jipv6.core.Packet;
+import se.sics.jipv6.core.RPLPacket;
 import se.sics.jipv6.core.UDPPacket;
 import se.sics.jipv6.mac.IEEE802154Handler;
 import se.sics.jipv6.util.Utils;
@@ -31,10 +32,37 @@ public class TestSniff {
         }
         if (payload instanceof UDPPacket) {
             System.out.println("Analyzer - UDP Packet");
-            if (packet.isLinkLocal(packet.getDestinationAddress())) {
-                System.out.println("*** Link Local Message: Possibly Sleep???");
+            if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
+                System.out.print("*** Link Local Message: Possibly Sleep from:");
+                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                System.out.println();
             } else {
-                System.out.println("*** Message to/from Fiona");                
+                System.out.println("*** Message to/from Fiona");
+            }
+        } else if (payload instanceof RPLPacket) {
+            RPLPacket rpl = (RPLPacket) payload;
+            switch (rpl.getCode()) {
+            case RPLPacket.RPL_DIS:
+                if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
+                    /* ... */
+                    System.out.print("*** Probe or repair from ");
+                    IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                    System.out.println();
+                } else {
+                    System.out.print("*** Warning - broadcast DIS!!! from");
+                    IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                    System.out.println();
+                }
+                break;
+            case RPLPacket.RPL_DIO:
+                break;
+            }
+        } else if (payload instanceof ICMP6Packet) {
+            ICMP6Packet icmp6 = (ICMP6Packet) payload;
+            if (icmp6.getType() == ICMP6Packet.NEIGHBOR_SOLICITATION) {
+                System.out.print("*** Warning - Neighbor solicitation!!! from: ");
+                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                System.out.println();
             }
         }
     }
@@ -54,8 +82,9 @@ public class TestSniff {
                 if (line != null && line.startsWith("h:")) {
                     /* HEX packet input */
                     byte[] data = Utils.hexconv(line.substring(2));
-                    System.out.printf("Got packet of %d bytes\n", data.length);
-                    System.out.println(line);
+                    // Print this if verbose?
+//                    System.out.printf("Got packet of %d bytes\n", data.length);
+//                    System.out.println(line);
                     Packet packet = new Packet();
                     packet.setBytes(data);
                     i154Handler.packetReceived(packet);
@@ -70,14 +99,13 @@ public class TestSniff {
                         IPv6Packet ipPacket = new IPv6Packet(packet);
                         int dispatch = packet.getData(0);
                         packet.setAttribute("6lowpan.dispatch", dispatch);
-                        System.out.printf("Dispatch: %02x\n", dispatch & 0xff);
                         if (hc06Packeter.parsePacketData(ipPacket)) {
                             boolean more = true;
                             byte nextHeader = ipPacket.getNextHeader();
                             IPv6ExtensionHeader extHeader = null;
                             while(more) {
-                                System.out.printf("Next Header: %d pos:%d\n", nextHeader, ipPacket.getPos());
-                                ipPacket.printPayload();
+//                                System.out.printf("Next Header: %d pos:%d\n", nextHeader, ipPacket.getPos());
+//                                ipPacket.printPayload();
                                 switch(nextHeader) {
                                 case HopByHopOption.DISPATCH:
                                     HopByHopOption hbh = new HopByHopOption();
@@ -89,7 +117,7 @@ public class TestSniff {
                                 case UDPPacket.DISPATCH:
                                     if (ipPacket.getIPPayload() != null && ipPacket.getIPPayload() instanceof UDPPacket) {
                                         /* All done ? */
-                                        System.out.println("All done - UDP already part of payload?");
+//                                        System.out.println("All done - UDP already part of payload?");
                                         more = false;
                                     } else {
                                         UDPPacket udpPacket = new UDPPacket();
@@ -99,7 +127,7 @@ public class TestSniff {
                                         } else {
                                             ipPacket.setIPPayload(udpPacket);
                                         }
-                                        System.out.println("UDP Packet handled...");
+//                                        System.out.println("UDP Packet handled...");
                                         udpPacket.printPacket(System.out);
                                         more = false;
                                     }
@@ -111,7 +139,7 @@ public class TestSniff {
                                     } else {
                                         ipPacket.setIPPayload(icmp6Packet);
                                     }
-                                    System.out.println("ICMP6 packet handled...");
+//                                    System.out.println("ICMP6 packet handled...");
                                     icmp6Packet.printPacket(System.out);
                                     more = false;
                                 default:

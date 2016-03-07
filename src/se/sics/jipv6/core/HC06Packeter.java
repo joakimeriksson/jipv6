@@ -52,7 +52,7 @@ public class HC06Packeter implements IPPacketer {
     public final static int PROTO_TCP = 6;
     public final static int PROTO_ICMP = 58;
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     private LoWPANFragmenter fragmenter = new LoWPANFragmenter();
         
@@ -485,10 +485,9 @@ public class HC06Packeter implements IPPacketer {
         if((packet.getData(0) & SICSLOWPAN_IPHC_NH_C) == 0) {
             /* Next header is carried inline */
             packet.nextHeader = packet.getData(hc06_ptr);
-            System.out.println("### Setting next header to: " + packet.nextHeader);
             hc06_ptr += 1;
         } else {
-            System.out.println("Next header compressed!");
+            if (DEBUG) System.out.println("Next header compressed!");
         }
 
         /* Hop limit */
@@ -513,7 +512,7 @@ public class HC06Packeter implements IPPacketer {
             /* Source address */
             AddrContext context = null;
             if((packet.getData(1) & SICSLOWPAN_IPHC_SAM_11) != SICSLOWPAN_IPHC_SAM_00) {
-                System.out.println("Setting context:" + sci + " SAM:" + (packet.getData(1) & SICSLOWPAN_IPHC_SAM_11));
+                if (DEBUG) System.out.println("Setting context:" + sci + " SAM:" + (packet.getData(1) & SICSLOWPAN_IPHC_SAM_11));
                 context = contexts[sci];
             }
 

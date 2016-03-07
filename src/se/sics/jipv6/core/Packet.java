@@ -39,14 +39,13 @@
  */
 
 package se.sics.jipv6.core;
-import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.Iterator;
 
 public class Packet {
 
   public static final String LL_SOURCE = "link.source";
   public static final String LL_DESTINATION = "link.destination";
+  private static final boolean DEBUG = false;
   
   protected Hashtable<String, Object> attributes = new Hashtable<String, Object>();
 
@@ -240,7 +239,7 @@ public class Packet {
     // TODO Auto-generated method stub
     int tPos = pos + currentPos;
     int len = getPayloadLength()  - pos;
-    System.out.println("Copying data: " + tPos + " Len: " + len);
+    if (DEBUG) System.out.println("Copying data: " + tPos + " Len: " + len);
     System.arraycopy(packetData, tPos, dst, dstPos, len);
   }
 
