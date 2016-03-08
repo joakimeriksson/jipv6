@@ -86,6 +86,18 @@ public class IPv6Packet extends Packet implements IPPacketer {
       return destinationAddress[0] == (byte) 0xfe && destinationAddress[1] == (byte) 0x80;
   }
   
+  public static boolean isEqual(byte[] a1, byte[] a2) {
+      if (a1 != null && a2 != null) {
+          if (a1.length != a2.length) return false;
+          for(int i = 0; i < a1.length; i++) {
+              if (a1[i] != a2[i]) return false;
+          }
+          return true;
+      }
+      /* null == null ? */
+      return false;
+  }
+  
   public IPv6Packet(IPPayload pl) {
     this();
     nextHeader = pl.getDispatch();
@@ -163,6 +175,17 @@ public class IPv6Packet extends Packet implements IPPacketer {
     out.println(" NxHdr: " + nextHeader);
   }
 
+  public static String addressToString(byte[] address) {
+      StringBuilder str = new StringBuilder();
+      for (int i = 0; i < 16; i+=2) {
+          if (i > 0) {
+              str.append(":");
+          }
+          str.append("" + Utils.hex16((((address[i] & 0xff) << 8) | address[i + 1] & 0xff)));
+        }
+    return str.toString();
+  }
+  
   public static void printAddress(PrintStream out, byte[] address) {
     for (int i = 0; i < 16; i+=2) {
       out.print(Utils.hex16((((address[i] & 0xff) << 8) | address[i + 1] & 0xff)));
@@ -246,6 +269,8 @@ public class IPv6Packet extends Packet implements IPPacketer {
   }
 
   public static boolean isMACBased(byte[] address, byte[] macAddress) {
+    if(address == null || macAddress == null) return false;
+    
     if (address[8] == (macAddress[0] ^ 0x02)) {
       for (int i = 1; i < macAddress.length; i++) {
         if (address[8 + i] != macAddress[i]) 

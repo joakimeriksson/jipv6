@@ -23,6 +23,8 @@ public class TestSniff {
     IEEE802154Handler i154Handler;
     HC06Packeter hc06Packeter;
     SerialRadioConnection serialRadio;
+    
+    NodeTable nodeTable = new NodeTable();
 
     public TestSniff(PacketAnalyzer a) {
         analyzer = a;
@@ -30,7 +32,7 @@ public class TestSniff {
         hc06Packeter = new HC06Packeter();
         hc06Packeter.setContext(0, 0xaaaa0000, 0, 0, 0);
         if (a != null) {
-            a.init();
+            a.init(nodeTable);
         }
     }
 
@@ -52,8 +54,25 @@ public class TestSniff {
         i154Handler.packetReceived(packet);
         //    packet.printPacket();
         //    i154Handler.printPacket(System.out, packet);
+        
+        byte[] mac;
+        Node sender = null;
+        Node receiver = null;
+        if((mac = packet.getLinkSource()) != null) {
+            /* only nodeTable getByMAC will trigger add of new node */
+            sender = nodeTable.getNodeByMAC(mac);
+            sender.packetSent++;
+        }
+        if((mac = packet.getLinkDestination()) != null) {
+            receiver = nodeTable.getNodeByMAC(mac);
+            /* NOTE: this is packets sent towards... rather than actually received */
+            receiver.packetReceived++;
+            receiver.seqNo = packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO);
+        }
+
+        
         if (analyzer != null) {
-            analyzer.analyzePacket(packet);
+            analyzer.analyzePacket(packet, sender, receiver);
         }
 
         if (packet.getPayloadLength() > 1 && 
@@ -110,6 +129,17 @@ public class TestSniff {
                         break;
                     }
                 }
+                /* Add link local destination address */
+                byte[] destination = ipPacket.getDestinationAddress();
+                if (IPv6Packet.isMACBased(destination, ipPacket.getLinkDestination()) ||
+                    IPv6Packet.isLinkLocal(destination)) {
+                    Node node = nodeTable.getNodeByIP(destination);
+                    if (node == null) {
+                        node = nodeTable.getNodeByMAC(ipPacket.getLinkDestination());
+                        nodeTable.addIPAddr(node, destination);
+                    }
+                }
+                
                 if (analyzer != null) {
                     analyzer.analyzeIPPacket(ipPacket);
                 }

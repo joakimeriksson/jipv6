@@ -25,13 +25,16 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     private int ack;
     private int data;
     private int cmd;
+    
+    private NodeTable nodeTable;
 
-    public void init() {
+    public void init(NodeTable table) {
+        this.nodeTable = table;
         new Thread(new Runnable() {
             public void run() {
                 while(true) {
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(10000);
                     } catch (InterruptedException e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -41,13 +44,15 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                             dioPacket, ucDISPacket, bcDISPacket,
                             daoPacket, nsPacket, sleepPacket, dataPacket,
                             data, ack, cmd, beacon);
+
+                    nodeTable.print();
                 }
             }
         }).start();
     }
     
     /* MAC packet received */
-    public void analyzePacket(Packet packet) {
+    public void analyzePacket(Packet packet, Node src, Node dst) {
         int type = packet.getAttributeAsInt("802154.type");
         switch (type) {
         case IEEE802154Handler.BEACONFRAME:
@@ -69,6 +74,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     public void analyzeIPPacket(IPv6Packet packet) {
         IPPayload payload = packet.getIPPayload();
         totPacket++;
+                
         while (payload instanceof IPv6ExtensionHeader) {
             System.out.println("Analyzer - EXT HDR:");
             payload.printPacket(System.out);

@@ -5,9 +5,9 @@ import se.sics.jipv6.core.Packet;
 
 public interface PacketAnalyzer {
     
-    public void init();
+    public void init(NodeTable table);
     
-    public void analyzePacket(Packet packet);
+    public void analyzePacket(Packet packet, Node sender, Node receiver);
     
     public void analyzeIPPacket(IPv6Packet packet);
 }

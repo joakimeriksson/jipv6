@@ -129,7 +129,7 @@ public class Packet {
     return attributes.get(name);
   }
 
-  public String addressToString(byte[] addr) {
+  public static String addressToString(byte[] addr) {
       StringBuilder addrStr = new StringBuilder();
       for(int i = 0; i < addr.length; i++) {
           if (i > 0) {
@@ -253,6 +253,15 @@ public class Packet {
           System.out.printf("%02x", packetData[i] & 0xff);
       }
       System.out.println();
+  }
+  
+  public static String macToString(byte[] addr) {
+      StringBuilder str = new StringBuilder();
+      for(int i = 0; i < addr.length; i++) {
+          if(i > 0) str.append(':');
+          str.append(String.format("%02x", addr[i]));
+      }
+      return str.toString();
   }
   
   public void printPacket() {
