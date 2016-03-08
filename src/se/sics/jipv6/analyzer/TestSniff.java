@@ -3,6 +3,7 @@ package se.sics.jipv6.analyzer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 
 import se.sics.jipv6.core.HC06Packeter;
@@ -126,6 +127,13 @@ public class TestSniff {
             }
             Class<?> paClass = Class.forName(args[0]);
             analyzer = (PacketAnalyzer) paClass.newInstance();
+        } else {
+            String analyserClassName = getJarManifestProperty("DefaultPacketAnalyzer");
+            if (analyserClassName != null) {
+                System.out.println("Using analyzer " + analyserClassName);
+                Class<?> paClass = Class.forName(analyserClassName);
+                analyzer = (PacketAnalyzer) paClass.newInstance();
+            }
         }
         TestSniff sniff = new TestSniff(analyzer);
         if(args.length > 1) {
@@ -151,4 +159,31 @@ public class TestSniff {
         }
     }
 
+    private static String getJarManifestProperty(String property) {
+        Class<?> C = new Object() { }.getClass().getEnclosingClass();
+        String retval = null;
+        String className = C.getSimpleName() + ".class";
+        String classPath = C.getResource(className).toString();
+        if (!classPath.toLowerCase().startsWith("jar")) {
+            return retval;
+        }
+        String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) + "/META-INF/MANIFEST.MF";
+        java.util.jar.Manifest manifest = null;
+        try {
+            manifest = new java.util.jar.Manifest(new java.net.URL(manifestPath).openStream());
+        } catch (MalformedURLException e) {
+            return retval;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (manifest == null) {
+            return retval;
+        }
+        java.util.jar.Attributes attr = manifest.getMainAttributes();
+        String S = attr.getValue(property);
+        if ((S != null) && (S.length() > 0)) {
+            return S;
+        }
+        return retval;
+    }
 }
