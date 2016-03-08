@@ -44,7 +44,7 @@ import se.sics.jipv6.util.Utils;
 
 public class UDPPacket implements IPPayload {
 
-    public final static boolean DEBUG = true;
+    public final static boolean DEBUG = false;
   public final static int DISPATCH = 17;
 
   int sourcePort;

@@ -29,6 +29,7 @@ public class TestSniff {
         i154Handler = new IEEE802154Handler();
         hc06Packeter = new HC06Packeter();
         hc06Packeter.setContext(0, 0xaaaa0000, 0, 0, 0);
+        a.init();
     }
 
     public void connect(String host) throws UnknownHostException, IOException {

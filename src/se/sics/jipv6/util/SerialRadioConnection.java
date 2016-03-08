@@ -65,6 +65,7 @@ public class SerialRadioConnection implements Runnable {
     public void send(byte[] data) throws IOException {
         Encap encap = Encap.createSerial(data);
         output.write(encap.generateBytes());
+        output.flush();
     }
     
     public void run() {
@@ -84,7 +85,7 @@ public class SerialRadioConnection implements Runnable {
                     esc = false;
                 } else {
                     if (data == SLIP_END) {
-                        System.out.println("SLIP Frame received - len:" + pos);
+                        if (DEBUG) System.out.println("SLIP Frame received - len:" + pos);
                         handleSlipData(Arrays.copyOf(buffer, pos));
                         pos = 0;
                     } else if (data == SLIP_ESC) {

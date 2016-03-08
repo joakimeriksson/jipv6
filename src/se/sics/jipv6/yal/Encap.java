@@ -40,6 +40,8 @@ import java.util.zip.CRC32;
  */
 public class Encap {
 
+    private static final boolean DEBUG = false;
+    
     private static final int MAX_VERSION = 2;
 
     private int version;
@@ -88,10 +90,10 @@ public class Encap {
         crc.update(payloadData);
         
         int pos = 8 + payloadData.length; 
-        data[pos] = (byte) (crc.getValue() >> 24);
-        data[pos + 1] = (byte) (crc.getValue() >> 16);
-        data[pos + 2] = (byte) (crc.getValue() >> 8);
-        data[pos + 3] = (byte) (crc.getValue() >> 0);
+        data[pos] = (byte) (crc.getValue() >> 0L);
+        data[pos + 1] = (byte) (crc.getValue() >> 8);
+        data[pos + 2] = (byte) (crc.getValue() >> 16);
+        data[pos + 3] = (byte) (crc.getValue() >> 24);
         
         return data;
     }
@@ -124,8 +126,7 @@ public class Encap {
             if ((data[5] == 1)) {
                 this.crcEnabled = true;
             }
-            optLen = data[6] *256 + data[7];
-            System.out.println("LEN:" + optLen);
+            optLen = data[6] * 256 + data[7];
         }
 
         int initVectorModeCode = data[3] & 0xf;
@@ -139,6 +140,22 @@ public class Encap {
             return Error.SHORT;
         }
 
+        if (DEBUG) {
+            System.out.println("Total Len: " + data.length);
+            System.out.println("payloadLen: " + optLen + " =?= " + (data.length - payloadOffset - (crcEnabled ? 4 : 0)));
+        }
+
+
+        if (crcEnabled) {
+            CRC32 crc = new CRC32();
+            crc.update(data, 0, data.length - 4);
+            long crcV = ((data[data.length - 1] & 0xffL) << 24) + ((data[data.length - 2] & 0xff) << 16) +
+                    ((data[data.length - 3] & 0xff) << 8) + (data[data.length - 4] & 0xff);
+            if (crc.getValue() != crcV) {
+                System.out.printf("CRC failed: %08x == %08x\n", crc.getValue(), crcV);
+            }
+        }
+        
         return Error.OK;
     }
 
