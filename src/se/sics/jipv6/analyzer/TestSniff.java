@@ -40,7 +40,7 @@ public class TestSniff {
         });
         serialRadio.connect(host);
         serialRadio.send("!C" + (char)0x26);
-        serialRadio.send("!m2");
+        serialRadio.send("!m" + (char)0x02);
     }
     
     

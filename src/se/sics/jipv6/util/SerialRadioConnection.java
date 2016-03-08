@@ -14,10 +14,10 @@ public class SerialRadioConnection implements Runnable {
 
     private static boolean DEBUG = false;
     
-    private static int SLIP_END = 0300;
-    private static int SLIP_ESC = 0333;
-    private static int SLIP_ESC_END = 0334;
-    private static int SLIP_ESC_ESC = 0335;
+    private static final int SLIP_END = 0300;
+    private static final int SLIP_ESC = 0333;
+    private static final int SLIP_ESC_END = 0334;
+    private static final int SLIP_ESC_ESC = 0335;
     private Socket socket;
     private InputStream input;
     private OutputStream output;
@@ -64,7 +64,22 @@ public class SerialRadioConnection implements Runnable {
     
     public void send(byte[] data) throws IOException {
         Encap encap = Encap.createSerial(data);
-        output.write(encap.generateBytes());
+        byte[] outData = encap.generateBytes();
+        for(int i = 0; i < outData.length; i++) {
+            switch((int) (outData[i] & 0xff)) {
+            case SLIP_END:
+                output.write(SLIP_ESC);
+                output.write(SLIP_ESC_END);
+                break;
+            case SLIP_ESC:
+                output.write(SLIP_ESC);
+                output.write(SLIP_ESC_ESC);
+            break;
+            default:
+                output.write(outData[i]);
+            }
+        }
+        output.write(SLIP_END);
         output.flush();
     }
     
