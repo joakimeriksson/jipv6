@@ -138,6 +138,8 @@ public class TestSniff {
         TestSniff sniff = new TestSniff(analyzer);
         if(args.length > 1) {
             sniff.connect(args[1]);
+        } else {
+            sniff.connect("localhost");
         }
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
         String line;
