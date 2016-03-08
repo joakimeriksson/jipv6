@@ -44,35 +44,47 @@ public class Encap {
     
     private static final int MAX_VERSION = 2;
 
+    private static final int LENOPT_OPTION_CRC       = 1;
+    private static final int LENOPT_OPTION_SEQNO_CRC = 2;
+
     private int version;
     private int errorCode;
     private PayloadType payloadType;
     private int payloadTypeCode;
     private FingerPrintMode fingerPrintMode;
     private IVMode initVectorMode;
-    private int payloadOffset;
     private byte[] payloadData;
     private int optLen = 0;
+    private int optLenOption = 0;
     private boolean crcEnabled = false;
-    
+
+    private Encap() {
+        //
+    }
+
     public static Encap createSerial(byte[] serial) {
         Encap encap = new Encap();
         encap.payloadType = PayloadType.SERIAL;
         encap.payloadTypeCode = PayloadType.SERIAL.getType();
         encap.fingerPrintMode = FingerPrintMode.LENOPT;
+        encap.optLenOption = LENOPT_OPTION_CRC;
         encap.crcEnabled = true;
         encap.initVectorMode = IVMode.NONE;
-        encap.payloadOffset = 0;
         encap.payloadData = serial;
         return encap;
     }
     
     /* Only handles serial with CRC at the moment */
     public byte[] generateBytes() {
-        int encapSize = 4;
-        if(fingerPrintMode == FingerPrintMode.LENOPT) {
-            /* Always CRC? */
-            encapSize += 8; /* 4 byte opt + len  + 4 byte CRC */
+        if (this.fingerPrintMode != FingerPrintMode.LENOPT) {
+            throw new IllegalStateException("Only FP LENOPT supported: " + this.fingerPrintMode);
+        }
+        if (this.initVectorMode != IVMode.NONE) {
+            throw new IllegalStateException("Init vector not yet supported: " + this.initVectorMode);
+        }
+        int encapSize = 4 + this.fingerPrintMode.getSize() + this.initVectorMode.getSize();
+        if(this.crcEnabled) {
+            encapSize += 4;
         }
         byte[] data = new byte[payloadData.length + encapSize];
         data[0] = (byte) (version << 4);
@@ -80,73 +92,77 @@ public class Encap {
         data[2] = (byte) errorCode;
         data[3] = (byte) (fingerPrintMode.getMode() << 4 | initVectorMode.getMode());
         data[4] = (byte) 0;
-        data[5] = (byte) (crcEnabled ? 1 : 0); /* CRC - enabled */
+        data[5] = (byte) this.optLenOption;
         data[6] = (byte) (payloadData.length / 256);
         data[7] = (byte) (payloadData.length & 255);
         System.arraycopy(payloadData, 0, data, 8, payloadData.length);
-        
-        CRC32 crc = new CRC32();
-        crc.update(data, 0, 8);
-        crc.update(payloadData);
-        
         int pos = 8 + payloadData.length; 
-        data[pos] = (byte) (crc.getValue() >> 0L);
-        data[pos + 1] = (byte) (crc.getValue() >> 8);
-        data[pos + 2] = (byte) (crc.getValue() >> 16);
-        data[pos + 3] = (byte) (crc.getValue() >> 24);
-        
+        if (this.crcEnabled) {
+            CRC32 crc = new CRC32();
+            crc.update(data, 0, pos);
+
+            data[pos] = (byte) (crc.getValue() >> 0L);
+            data[pos + 1] = (byte) (crc.getValue() >> 8);
+            data[pos + 2] = (byte) (crc.getValue() >> 16);
+            data[pos + 3] = (byte) (crc.getValue() >> 24);
+        }
         return data;
     }
     
-    public Error parseEncap(byte[] data) {
+    public static Encap parseEncap(byte[] data) throws ParseException {
         if (data == null || data.length < 4) {
-            return Error.SHORT;
+            throw new ParseException("too short data: " + (data == null ? 0 : data.length)
+                    + " bytes", Error.SHORT);
         }
-        this.payloadOffset = 4;
-        this.payloadData = data;
-        this.version = (data[0] >> 4) & 0x0f;
+        Encap encap = new Encap();
+        encap.version = (data[0] >> 4) & 0x0f;
+        int offset = 4;
         int padding = data[0] & 0xf;
-        if (this.version > MAX_VERSION) {
-            return Error.BAD_VERSION;
+        if (encap.version > MAX_VERSION) {
+            throw new ParseException("Unsupported Encap version: " + encap.version, Error.BAD_VERSION);
         }
-        this.errorCode = data[2] & 0xff;
-        this.payloadTypeCode = data[1] & 0xff;
-        this.payloadType = PayloadType.getByType(this.payloadTypeCode);
+        encap.errorCode = data[2] & 0xff;
+        encap.payloadTypeCode = data[1] & 0xff;
+        encap.payloadType = PayloadType.getByType(encap.payloadTypeCode);
 
         int fingerPrintModeCode = (data[3] >> 4) & 0xf;
-        this.fingerPrintMode = FingerPrintMode.getByMode(fingerPrintModeCode);
-        if (this.fingerPrintMode == null) {
-            return Error.BAD_FINGERPRINT_MODE;
+        encap.fingerPrintMode = FingerPrintMode.getByMode(fingerPrintModeCode);
+        if (encap.fingerPrintMode == null) {
+           throw new ParseException("Unsupported fingerprint mode: " + fingerPrintModeCode,
+                   Error.BAD_FINGERPRINT_MODE);
         }
-        this.payloadOffset += this.fingerPrintMode.getSize();
-        
-        if(this.fingerPrintMode == FingerPrintMode.LENOPT) {
+        offset += encap.fingerPrintMode.getSize();
+
+        if(encap.fingerPrintMode == FingerPrintMode.LENOPT) {
             /* check if CRC is there - bit 1 of 16 (4 / 5) is CRC*/
             /* no support for SEQNO at the moment */
-            if ((data[5] == 1)) {
-                this.crcEnabled = true;
+            encap.optLenOption = data[5] & 0xff;
+            if ((encap.optLenOption == LENOPT_OPTION_CRC) || (encap.optLenOption == LENOPT_OPTION_SEQNO_CRC)) {
+                encap.crcEnabled = true;
+                padding += 4;
             }
-            optLen = data[6] * 256 + data[7];
+            encap.optLen = ((data[6] & 0xff) << 8) + (data[7] & 0xff);
         }
 
         int initVectorModeCode = data[3] & 0xf;
-        this.initVectorMode = IVMode.getByMode(initVectorModeCode);
-        if (this.initVectorMode == null) {
-            return Error.BAD_INITVECTOR_MODE;
+        encap.initVectorMode = IVMode.getByMode(initVectorModeCode);
+        if (encap.initVectorMode == null) {
+            throw new ParseException("Unsupported init vector mode: " + initVectorModeCode,
+                    Error.BAD_INITVECTOR_MODE);
         }
-        this.payloadOffset += this.initVectorMode.getSize();
+        offset += encap.initVectorMode.getSize();
 
-        if (this.payloadOffset + padding > data.length) {
-            return Error.SHORT;
+        if (offset + encap.optLen + padding > data.length) {
+            throw new ParseException("too short data", Error.SHORT);
         }
 
         if (DEBUG) {
             System.out.println("Total Len: " + data.length);
-            System.out.println("payloadLen: " + optLen + " =?= " + (data.length - payloadOffset - (crcEnabled ? 4 : 0)));
+            System.out.println("payloadLen: " + encap.optLen + " =?= "
+            + (data.length - offset - (encap.crcEnabled ? 4 : 0)));
         }
 
-
-        if (crcEnabled) {
+        if (encap.crcEnabled) {
             CRC32 crc = new CRC32();
             crc.update(data, 0, data.length - 4);
             long crcV = ((data[data.length - 1] & 0xffL) << 24) + ((data[data.length - 2] & 0xff) << 16) +
@@ -155,8 +171,9 @@ public class Encap {
                 System.out.printf("CRC failed: %08x == %08x\n", crc.getValue(), crcV);
             }
         }
-        
-        return Error.OK;
+        encap.payloadData = Arrays.copyOfRange(data, offset, data.length - padding);
+
+        return encap;
     }
 
     public int getVersion() {
@@ -206,7 +223,7 @@ public class Encap {
     }
 
     public byte[] getPayloadData() {
-        return Arrays.copyOfRange(payloadData, payloadOffset, payloadData.length - (crcEnabled ? 4 : 0));
+        return this.payloadData;
     }
 
     public enum PayloadType {

@@ -1,5 +1,7 @@
 package se.sics.jipv6.util;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,7 +10,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 
 import se.sics.jipv6.yal.Encap;
-import se.sics.jipv6.yal.Encap.Error;
+import se.sics.jipv6.yal.ParseException;
 
 public class SerialRadioConnection implements Runnable {
 
@@ -18,6 +20,8 @@ public class SerialRadioConnection implements Runnable {
     private static final int SLIP_ESC = 0333;
     private static final int SLIP_ESC_END = 0334;
     private static final int SLIP_ESC_ESC = 0335;
+    private static final int DEBUG_LINE_MARKER = '\r';
+
     private Socket socket;
     private InputStream input;
     private OutputStream output;
@@ -36,16 +40,33 @@ public class SerialRadioConnection implements Runnable {
     }
     
     public void connect(String host) throws UnknownHostException, IOException {
-        socket = new Socket(host, 9999);
-        input = socket.getInputStream();
-        output = socket.getOutputStream();
+        connect(host, 9999);
+    }
+    public void connect(String host, int port) throws UnknownHostException, IOException {
+        socket = new Socket(host, port);
+        input = new BufferedInputStream(socket.getInputStream());
+        output = new BufferedOutputStream(socket.getOutputStream());
         new Thread(this).start();
     }
 
     private void handleSlipData(byte[] slipFrame) {
-        Encap encap = new Encap();
-        Error e = encap.parseEncap(slipFrame);
-        if (e == Error.OK) {
+        if (slipFrame == null || slipFrame.length == 0) {
+            return;
+        }
+        if ((slipFrame[0] & 0xff) == DEBUG_LINE_MARKER) {
+            // Console data from serial radio
+            int len = slipFrame.length - 1;
+            if (slipFrame[len] == '\n') {
+                len--;
+            }
+            if (slipFrame[len] == '\r') {
+                len--;
+            }
+            System.out.println("SERIAL-RADIO: " + new String(slipFrame, 1, len));
+            return;
+        }
+        try {
+            Encap encap = Encap.parseEncap(slipFrame);
             /* Send of data to something?? */
             byte payload[] = encap.getPayloadData();
             payload = Arrays.copyOfRange(payload, 2, payload.length);
@@ -59,6 +80,10 @@ public class SerialRadioConnection implements Runnable {
             if (listener != null) {
                 listener.packetReceived(payload);
             }
+        } catch (ParseException e) {
+            System.err.println("Error: failed to parse encap: " + e.getMessage());
+            System.err.println("       0x" + Utils.bytesToHexString(slipFrame));
+            e.printStackTrace();
         }
     }
     
@@ -74,7 +99,7 @@ public class SerialRadioConnection implements Runnable {
             case SLIP_ESC:
                 output.write(SLIP_ESC);
                 output.write(SLIP_ESC_ESC);
-            break;
+                break;
             default:
                 output.write(outData[i]);
             }
@@ -100,8 +125,10 @@ public class SerialRadioConnection implements Runnable {
                     esc = false;
                 } else {
                     if (data == SLIP_END) {
-                        if (DEBUG) System.out.println("SLIP Frame received - len:" + pos);
-                        handleSlipData(Arrays.copyOf(buffer, pos));
+                        if (pos > 0) {
+                            if (DEBUG) System.out.println("SLIP Frame received - len:" + pos);
+                            handleSlipData(Arrays.copyOf(buffer, pos));
+                        }
                         pos = 0;
                     } else if (data == SLIP_ESC) {
                         esc = true;
@@ -123,7 +150,20 @@ public class SerialRadioConnection implements Runnable {
         }
     }
 
-    public void send(String string) throws IOException {
-        send(string.getBytes());
+    public void setRadioChannel(int channel) throws IOException {
+        byte[] data = new byte[3];
+        data[0] = '!';
+        data[1] = 'C';
+        data[2] = (byte)(channel & 0xff);
+        send(data);
     }
+
+    public void setRadioMode(int mode) throws IOException {
+        byte[] data = new byte[3];
+        data[0] = '!';
+        data[1] = 'm';
+        data[2] = (byte)(mode & 0xff);
+        send(data);
+    }
+
 }

@@ -42,6 +42,7 @@ package se.sics.jipv6.util;
 
 public class Utils {
   private static final String str16 = "0000000000000000";
+  private static final char[] hex = "0123456789abcdef".toCharArray();
 
   public static String binary8(int data) {
     String s = Integer.toString(data, 2);
@@ -185,6 +186,19 @@ public class Utils {
       }
     }
     return data;
+  }
+
+  public static String bytesToHexString(byte[] data) {
+      return bytesToHexString(data, 0, data.length);
+  }
+
+  public static String bytesToHexString(byte[] data, int fromIndex, int toIndex) {
+      StringBuilder sb = new StringBuilder();
+      for (int i = fromIndex; i < toIndex; i++) {
+          sb.append(hex[(data[i] >> 4) & 0xf]);
+          sb.append(hex[data[i] & 0xf]);
+      }
+      return sb.toString();
   }
 
   public static boolean equals(byte[] arr1, byte[] arr2) {
