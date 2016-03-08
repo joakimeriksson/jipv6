@@ -184,12 +184,12 @@ public class IPv6Packet extends Packet implements IPPacketer {
     if (version != 6) {
       return false;
     }
-    trafficClass = ((packet.getData(0) & 0x0f)<<4) +
-    ((packet.getData(1) & 0xff) >> 4);
-    flowLabel = (packet.getData(1) & 0x0f) << 16 +
-    (packet.getData(2) & 0xff) << 8 +
-    packet.getData(3) & 0xff;
-    payloadLen = ((packet.getData(4) & 0xff) << 8) + packet.getData(5);
+    trafficClass = ((packet.getData(0) & 0x0f) << 4)
+            + ((packet.getData(1) & 0xff) >> 4);
+    flowLabel = ((packet.getData(1) & 0x0f) << 16)
+            + ((packet.getData(2) & 0xff) << 8)
+            + (packet.getData(3) & 0xff);
+    payloadLen = ((packet.getData(4) & 0xff) << 8) + (packet.getData(5) & 0xff);
     nextHeader = packet.getData(6);
     hopLimit = packet.getData(7) & 0xff;
     packet.copy(8, sourceAddress, 0, 16);
@@ -207,7 +207,7 @@ public class IPv6Packet extends Packet implements IPPacketer {
   }
   
   public static long getLong(byte[] data, int pos) {
-    long lval = data[pos] + ((data[pos + 1] & 0xffL) << 8) +
+    long lval = (data[pos] & 0xff) + ((data[pos + 1] & 0xffL) << 8) +
     ((data[pos + 2] & 0xffL) << 16) + ((data[pos + 3] & 0xffL) << 24) +
     ((data[pos + 4] & 0xffL) << 32) + ((data[pos + 5] & 0xffL)<< 40) +
     ((data[pos + 6] & 0xffL) << 48) + ((data[pos + 7] & 0xffL) << 56);

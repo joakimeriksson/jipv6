@@ -23,17 +23,16 @@
   </target>
 
   <target name="compile" depends="init" description="compile the source">
-    <javac srcdir="${src}" destdir="${build}" classpathref="classpath" debug="${javac.debug}"/>
+    <javac srcdir="${src}" destdir="${build}" classpathref="classpath" debug="${javac.debug}" includeantruntime="false"/>
   </target>
 
   <target name="jar" depends="compile" description="generate JIPv6 jar file" >
     <jar jarfile="${jarfile}" basedir="${build}">
       <manifest>
-        <attribute name="Main-Class" value="se.sics.mspsim.Main"/>
+        <attribute name="Main-Class" value="se.sics.jipv6.analyzer.TestSniff"/>
       	<attribute name="Sealed" value="true"/>
       	<attribute name="Class-Path" value="${jar.classpath}" />
       </manifest>
-      <fileset dir="." includes="images/*.jpg"/>
     </jar>
   </target>
 

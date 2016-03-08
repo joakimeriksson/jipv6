@@ -369,15 +369,17 @@ public class HC01Packeter implements IPPacketer {
     if ((enc1 & 0x40) == 0) {
       if ((enc1 & 0x80) == 0) {
         packet.version = (packet.getData(pos) & 0xf0) >> 4;
-      packet.trafficClass = ((packet.getData(pos) & 0x0f)<<4) + ((packet.getData(pos + 1) & 0xff) >> 4);
-      packet.flowLabel = (packet.getData(pos + 1) & 0x0f) << 16 + (packet.getData(pos + 2) & 0xff) << 8 +
-      packet.getData(pos + 3) & 0xff;
+      packet.trafficClass = ((packet.getData(pos) & 0x0f) << 4) + ((packet.getData(pos + 1) & 0xff) >> 4);
+      packet.flowLabel = ((packet.getData(pos + 1) & 0x0f) << 16)
+              + ((packet.getData(pos + 2) & 0xff) << 8)
+              + (packet.getData(pos + 3) & 0xff);
       pos += 4;
       } else {
         packet.version = 6;
         packet.trafficClass = 0;
-        packet.flowLabel = (packet.getData(pos) & 0x0f) << 16 
-        + (packet.getData(pos + 1) & 0xff) << 8 + packet.getData(pos + 2) & 0xff;;
+        packet.flowLabel = ((packet.getData(pos) & 0x0f) << 16) 
+                + ((packet.getData(pos + 1) & 0xff) << 8)
+                + (packet.getData(pos + 2) & 0xff);
         pos += 3;
       }
     } else {

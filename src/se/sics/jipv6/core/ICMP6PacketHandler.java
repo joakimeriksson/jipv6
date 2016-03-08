@@ -39,6 +39,7 @@
  */
 
 package se.sics.jipv6.core;
+import se.sics.jipv6.util.Utils;
 
 public class ICMP6PacketHandler {
 
@@ -103,7 +104,7 @@ public class ICMP6PacketHandler {
       ipp = new IPv6Packet();
       ipp.setIPPayload(p);
       // is this ok?
-      if (packet.sourceAddress.equals(IPStack.UNSPECIFIED)) {
+      if (Utils.equals(packet.sourceAddress, IPStack.UNSPECIFIED)) {
           ipp.destAddress = IPStack.ALL_NODES;
       } else {
           ipp.destAddress = packet.sourceAddress;

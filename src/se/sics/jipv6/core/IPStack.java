@@ -123,7 +123,7 @@ public class IPStack {
   }
   
   public static boolean isLinkLocal(byte[] address) {
-      return address[0] == 0xfe && address[1] == 0x80;
+      return address[0] == (byte) 0xfe && address[1] == (byte) 0x80;
   }
   
   public NeighborTable getNeighborTable() {

@@ -44,6 +44,7 @@ public class Encap {
 
     private int version;
     private int errorCode;
+    private PayloadType payloadType;
     private int payloadTypeCode;
     private FingerPrintMode fingerPrintMode;
     private IVMode initVectorMode;
@@ -54,6 +55,7 @@ public class Encap {
     
     public static Encap createSerial(byte[] serial) {
         Encap encap = new Encap();
+        encap.payloadType = PayloadType.SERIAL;
         encap.payloadTypeCode = PayloadType.SERIAL.getType();
         encap.fingerPrintMode = FingerPrintMode.LENOPT;
         encap.crcEnabled = true;
@@ -107,6 +109,7 @@ public class Encap {
         }
         this.errorCode = data[2] & 0xff;
         this.payloadTypeCode = data[1] & 0xff;
+        this.payloadType = PayloadType.getByType(this.payloadTypeCode);
 
         int fingerPrintModeCode = (data[3] >> 4) & 0xf;
         this.fingerPrintMode = FingerPrintMode.getByMode(fingerPrintModeCode);
@@ -169,7 +172,7 @@ public class Encap {
     }
 
     public PayloadType getPayloadType() {
-        return PayloadType.getByType(this.payloadTypeCode);
+        return payloadType;
     }
 
     public String getPayloadTypeAsString() {

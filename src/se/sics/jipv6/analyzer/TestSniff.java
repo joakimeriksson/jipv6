@@ -39,6 +39,7 @@ public class TestSniff {
         });
         serialRadio.connect(host);
         serialRadio.send("!C" + (char)0x26);
+        serialRadio.send("!m2");
     }
     
     
@@ -100,8 +101,10 @@ public class TestSniff {
                         //                    System.out.println("ICMP6 packet handled...");
                         icmp6Packet.printPacket(System.out);
                         more = false;
+                        break;
                     default:
                         more = false;
+                        break;
                     }
                 }
                 if (analyzer != null) {
@@ -114,8 +117,15 @@ public class TestSniff {
 
     public static void main(String[] args) throws ClassNotFoundException, InstantiationException, 
     IllegalAccessException, UnknownHostException, IOException {
-        Class<?> paClass = Class.forName(args[0]);
-        PacketAnalyzer analyzer = (PacketAnalyzer) paClass.newInstance();
+        PacketAnalyzer analyzer = null;
+        if (args.length > 0) {
+            if ("help".equals(args[0]) || "-h".equals(args[0])) {
+                System.out.println("Usage: " + TestSniff.class.getSimpleName() + " [packetanalyzer] [host]");
+                System.exit(0);
+            }
+            Class<?> paClass = Class.forName(args[0]);
+            analyzer = (PacketAnalyzer) paClass.newInstance();
+        }
         TestSniff sniff = new TestSniff(analyzer);
         if(args.length > 1) {
             sniff.connect(args[1]);

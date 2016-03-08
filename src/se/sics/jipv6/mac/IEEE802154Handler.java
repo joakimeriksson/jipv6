@@ -110,22 +110,24 @@ public class IEEE802154Handler extends AbstractPacketHandler {
     if (destAddrMode > 0) {
       destPanID = (packet.getData(pos) & 0xff) + ((packet.getData(pos + 1) & 0xff) << 8);
       packet.setAttribute(DESTINATION_PAN_ID, destPanID);
-      byte[] destAddress = null;
       pos += 2;
+      packet.setAttribute(DESTINATION_MODE, destAddrMode);
       if (destAddrMode == SHORT_ADDRESS) {
-        destAddress = new byte[2];
+        byte[] destAddress = new byte[2];
         destAddress[1] = packet.getData(pos);
         destAddress[0] = packet.getData(pos + 1);
         pos += 2;
+        packet.setAttribute(Packet.LL_DESTINATION, destAddress);
       } else if (destAddrMode == LONG_ADDRESS) {
-        destAddress = new byte[8];
+        byte[] destAddress = new byte[8];
         for (int i = 0; i < 8; i++) {
           destAddress[i] = packet.getData(pos + 7 - i);
         }
         pos += 8;
+        packet.setAttribute(Packet.LL_DESTINATION, destAddress);
+      } else {
+          // No destination address
       }
-      packet.setAttribute(DESTINATION_MODE, destAddrMode);
-      packet.setAttribute(Packet.LL_DESTINATION, destAddress);
     }
 
     if (srcAddrMode > 0) {
@@ -137,21 +139,23 @@ public class IEEE802154Handler extends AbstractPacketHandler {
         srcPanID = destPanID;
       }
       packet.setAttribute(SOURCE_PAN_ID, srcPanID);
-      byte[] sourceAddress = null;
+      packet.setAttribute(SOURCE_MODE, srcAddrMode);
       if (srcAddrMode == SHORT_ADDRESS) {
-        sourceAddress = new byte[2];
+        byte[] sourceAddress = new byte[2];
         sourceAddress[1] = packet.getData(pos);
         sourceAddress[0] = packet.getData(pos + 1);        
         pos += 2;
+        packet.setAttribute(Packet.LL_SOURCE, sourceAddress);
       } else if (srcAddrMode == LONG_ADDRESS) {
-        sourceAddress = new byte[8];
+        byte[] sourceAddress = new byte[8];
         for (int i = 0; i < 8; i++) {
           sourceAddress[i] = packet.getData(pos + 7 - i);
         }
         pos += 8;
+        packet.setAttribute(Packet.LL_SOURCE, sourceAddress);
+      } else {
+          // No source address
       }
-      packet.setAttribute(SOURCE_MODE, srcAddrMode);
-      packet.setAttribute(Packet.LL_SOURCE, sourceAddress);
     }
     packet.incPos(pos);
     packet.setAttribute(PAYLOAD_LEN, packet.getPayloadLength());
