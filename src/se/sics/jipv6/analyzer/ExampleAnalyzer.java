@@ -119,6 +119,10 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     public void analyzeIPPacket(IPv6Packet packet) {
         IPPayload payload = packet.getIPPayload();
         totPacket++;
+        // Adjust the start time if the packet was sent earlier (read from a log file)
+        if (packet.getTimeMillis() < startTime) {
+            startTime = packet.getTimeMillis();
+        }
         long elapsed = packet.getTimeMillis() - startTime;
         String timeStr = String.format("%d:%02d:%02d.%03d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60, (elapsed / 1000) % 60, elapsed % 1000);
                 
