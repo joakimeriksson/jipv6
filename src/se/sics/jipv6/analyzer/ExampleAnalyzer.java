@@ -66,7 +66,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         totPacket++;
                 
         while (payload instanceof IPv6ExtensionHeader) {
-            System.out.println("Analyzer - EXT HDR:");
+            System.out.print("Analyzer - EXT HDR " + payload.getClass().getSimpleName() + ": ");
             payload.printPacket(System.out);
             payload = ((IPv6ExtensionHeader) payload).getNext();
         }
@@ -74,10 +74,11 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             byte[] data = ((UDPPacket) payload).getPayload();
             System.out.println("Analyzer - UDP Packet Payload: " +  data.length);
             if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
-                System.out.print("*** Link Local Message: Possibly Sleep from:");
+                System.out.print("*** Link Local Message: Possibly Sleep from ");
                 IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                System.out.print(" To: ");
+                System.out.print(" to ");
                 IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
+                System.out.println();
                 int flag = data[4] & 0xff;
                 int time = (data[6] & 0xff) * 256 + (data[7] & 0xff);
                 if((flag & 0xf) == 0x01) {

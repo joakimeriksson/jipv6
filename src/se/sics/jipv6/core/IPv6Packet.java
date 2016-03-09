@@ -198,7 +198,6 @@ public class IPv6Packet extends Packet implements IPPacketer {
         out.print(":");
       }
     }
-    out.println();
   }
 
   /* this is for setting raw packet data */

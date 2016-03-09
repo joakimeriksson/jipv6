@@ -91,6 +91,10 @@ public class SerialRadioConnection implements Runnable {
             System.err.println("Error: failed to parse encap: " + e.getMessage());
             System.err.println("       0x" + Utils.bytesToHexString(slipFrame));
             e.printStackTrace();
+        } catch (Exception e) {
+            System.err.println("Error: failed to handle packet: " + e.getMessage());
+            System.err.println("       0x" + Utils.bytesToHexString(slipFrame));
+            e.printStackTrace();
         }
     }
     

@@ -247,6 +247,7 @@ public class IPStack {
           IPv6Packet.printAddress(System.out, myIPAddress);
           System.out.print(", Dest: ");
           IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
+          System.out.println();
       }
       if (tunnel != null && tunnel.isReady()) {
         tunnel.sendPacket(packet);
@@ -308,6 +309,7 @@ public class IPStack {
           IPv6Packet.printAddress(System.out, myIPAddress);
           System.out.print(", Dest: ");
           IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
+          System.out.println();
       }
       if (tunnel != null && tunnel.isReady()) {
         tunnel.sendPacket(packet);

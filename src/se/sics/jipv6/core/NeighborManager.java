@@ -121,6 +121,7 @@ public class NeighborManager extends TimerTask {
         ipp.sourceAddress = ipStack.myLocalIPAddress;
         System.out.print("Created ICMP6 RA for ");
         IPv6Packet.printAddress(System.out, ipp.destAddress);
+        System.out.print(" ");
         packet.printPacket(System.out);
 
         ipStack.sendPacket(ipp, packet != null ? packet.netInterface : null);

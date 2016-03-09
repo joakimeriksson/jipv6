@@ -1,6 +1,7 @@
 package se.sics.jipv6.core;
 
 import java.io.PrintStream;
+import se.sics.jipv6.util.Utils;
 
 public class HopByHopOption implements IPv6ExtensionHeader {
 
@@ -30,14 +31,13 @@ public class HopByHopOption implements IPv6ExtensionHeader {
         nextHeader = packet.getData(0);
         len = packet.getData(1) * 8 + 8;
         System.out.printf("Parsed HBH Option - NH:%d (%02x) len:%d\n",
-                nextHeader, nextHeader, len);
+                nextHeader & 0xff, nextHeader & 0xff, len);
         packet.incPos(len);
     }
 
     @Override
     public void printPacket(PrintStream out) {
-        // TODO Auto-generated method stub
-        
+        out.println("HBH Option NH: " + (nextHeader & 0xff) + " (" + Utils.hex8(nextHeader & 0xff) + ")");
     }
 
     public void setNext(IPPayload payload) {
@@ -46,7 +46,6 @@ public class HopByHopOption implements IPv6ExtensionHeader {
     
     @Override
     public IPPayload getNext() {
-        // TODO Auto-generated method stub
         return next;
     }
 

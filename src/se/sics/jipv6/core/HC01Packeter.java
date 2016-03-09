@@ -332,8 +332,9 @@ public class HC01Packeter implements IPPacketer {
     if (DEBUG) {
         System.out.print("HC01: From ");
         IPv6Packet.printAddress(System.out, packet.sourceAddress);
-        System.out.print("HC01:   To ");
+        System.out.print(" to ");
         IPv6Packet.printAddress(System.out, packet.destAddress);
+        System.out.println();
     }
     byte[] pload;
     if (packet.nextHeader == UDPPacket.DISPATCH) {
@@ -587,6 +588,7 @@ public class HC01Packeter implements IPPacketer {
       System.out.println("TTL: " + packet.hopLimit);
       System.out.print("Src Addr: ");
       IPv6Packet.printAddress(System.out, packet.sourceAddress);
+      System.out.println();
       System.out.print("Dst Addr: ");
       IPv6Packet.printAddress(System.out, packet.destAddress);
       System.out.println();
