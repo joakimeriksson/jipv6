@@ -85,7 +85,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 sleepPacket++;
             } else {
                 dataPacket++;
-                System.out.println("*** Message to/from Fiona");
+                System.out.println("*** Message to/from DM Server");
             }
         } else if (payload instanceof RPLPacket) {
             RPLPacket rpl = (RPLPacket) payload;

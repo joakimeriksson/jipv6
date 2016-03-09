@@ -38,17 +38,28 @@ public class TestSniff {
     }
 
     public void connect(String host) throws UnknownHostException, IOException {
+        connect(host, -1);
+    }
+
+    public void connect(String host, int port) throws UnknownHostException, IOException {
         serialRadio = new SerialRadioConnection(new SerialRadioConnection.PacketListener() {
             public void packetReceived(byte[] data) {
                 packetData(data);
             }
         });
-        serialRadio.connect(host);
-        serialRadio.setRadioChannel(26);
+        if (port < 0) {
+            serialRadio.connect(host);
+        } else {
+            serialRadio.connect(host, port);
+        }
+        // Set radio in sniff mode
         serialRadio.setRadioMode(2);
     }
-    
-    
+
+    public SerialRadioConnection getSerialRadio() {
+        return this.serialRadio;
+    }
+
     public void packetData(byte[] data) {
         Packet packet = new Packet();
         packet.setBytes(data);
@@ -173,6 +184,10 @@ public class TestSniff {
         } else {
             sniff.connect("localhost");
         }
+        sniff.runCLI();
+    }
+
+    public void runCLI() {
         /* NOTE: supports input of HEX packets via h:.... other than that is commands */
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
         String line;
@@ -185,7 +200,7 @@ public class TestSniff {
                     // Print this if verbose?
                     //                    System.out.printf("Got packet of %d bytes\n", data.length);
                     //                    System.out.println(line);
-                    sniff.packetData(data);
+                    this.packetData(data);
                 } else {
                     /* Handle some very basic commands - needs improvement - steal from MSPSim soon?! */
                     if (line.startsWith("set ")) {
@@ -193,27 +208,44 @@ public class TestSniff {
                         if (parts.length > 2 ) {
                             if ("channel".equals(parts[1])) {
                                 try {
-                                    int ch = Integer.parseInt(parts[2]);
-                                    sniff.serialRadio.setRadioChannel(ch);
+                                    int ch = Utils.decodeInt(parts[2]);
+                                    this.serialRadio.setRadioChannel(ch);
                                 } catch (Exception e) {
-                                    System.out.println("Failed setting channel to: " + parts[2]);
+                                    System.out.println("Failed setting channel to " + parts[2]);
                                 }
                             } else {
-                                System.out.println("Unhandled set command:" + line);
+                                System.out.println("Unhandled set command: " + line);
                             }
                          } else {
-                             System.out.println("Set needs parameter and value:" + line);
+                             System.out.println("Set needs parameter and value: " + line);
                          }
-                    }
-                    if (line.startsWith("print ")) {
+                    } else if (line.startsWith("get ")) {
+                        String parts[] = line.split(" ");
+                        if (parts.length > 1 ) {
+                            if ("channel".equals(parts[1])) {
+                                byte[] data = new byte[2];
+                                data[0] = '?';
+                                data[1] = 'C';
+                                this.serialRadio.send(data);
+                            } else {
+                                System.out.println("Unhandled set gommand: " + line);
+                            }
+                         } else {
+                             System.out.println("Set needs parameter and value: " + line);
+                         }
+
+                    } else if (line.startsWith("print ")) {
                         String parts[] = line.split(" ");
                         if (parts.length > 1) {
                             if ("nodes".equals(parts[1])) {
-                                sniff.nodeTable.print();
+                                this.nodeTable.print();
                             } else if ("stats".equals(parts[1])) {
-                                sniff.analyzer.print();
+                                this.analyzer.print();
                             }
                         }
+                    } else if (line.equals("q") || line.equals("quit")) {
+                        System.err.println("Exiting...");
+                        System.exit(0);
                     }
                 }
             }
@@ -223,7 +255,7 @@ public class TestSniff {
         }
     }
 
-    private static String getJarManifestProperty(String property) {
+    static String getJarManifestProperty(String property) {
         Class<?> C = new Object() { }.getClass().getEnclosingClass();
         String retval = null;
         String className = C.getSimpleName() + ".class";
@@ -250,4 +282,5 @@ public class TestSniff {
         }
         return retval;
     }
+
 }

@@ -67,18 +67,25 @@ public class SerialRadioConnection implements Runnable {
         }
         try {
             Encap encap = Encap.parseEncap(slipFrame);
+            if (encap.getPayloadType() != Encap.PayloadType.SERIAL) {
+                // Ignore any other payload than serial data
+                return;
+            }
             /* Send of data to something?? */
             byte payload[] = encap.getPayloadData();
-            payload = Arrays.copyOfRange(payload, 2, payload.length);
             if (DEBUG) {
-                System.out.println("Payload (len = " + payload.length + ")");
-                for(int i = 0; i < payload.length; i++) {
-                    System.out.printf("%02x", payload[i]);
-                }
-                System.out.println();
+                System.out.println("Payload (len = " + payload.length + "): " + Utils.bytesToHexString(payload));
             }
-            if (listener != null) {
-                listener.packetReceived(payload);
+            if (payload.length < 2) {
+                // Ignore too short packets
+                return;
+            }
+            if (payload[0] == '!' && payload[1] == 'h') {
+                // Sniffer data
+                if (listener != null) {
+                    payload = Arrays.copyOfRange(payload, 2, payload.length);
+                    listener.packetReceived(payload);
+                }
             }
         } catch (ParseException e) {
             System.err.println("Error: failed to parse encap: " + e.getMessage());

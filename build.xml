@@ -29,7 +29,7 @@
   <target name="jar" depends="compile" description="generate JIPv6 jar file" >
     <jar jarfile="${jarfile}" basedir="${build}">
       <manifest>
-        <attribute name="Main-Class" value="se.sics.jipv6.analyzer.TestSniff"/>
+        <attribute name="Main-Class" value="se.sics.jipv6.analyzer.Main"/>
       	<attribute name="Sealed" value="true"/>
       	<attribute name="Class-Path" value="${jar.classpath}" />
       </manifest>
