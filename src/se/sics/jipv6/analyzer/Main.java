@@ -113,7 +113,13 @@ public class Main {
             for (PCAPPacket packet = reader.readPacket(); packet != null; packet = reader.readPacket()) {
                 byte[] packetData = packet.getPayload();
                 if (DEBUG) System.out.println("PCAP(" + packetData.length + "/" + packet.getCapturedSize() + "): " + Utils.bytesToHexString(packet.getPayload()));
-                sniff.packetData(packet);
+                try {
+                    sniff.packetData(packet);
+                } catch (Exception e) {
+                    System.err.println("Error: failed to handle packet: " + e.getMessage());
+                    System.err.println("       0x" + Utils.bytesToHexString(packetData));
+                    e.printStackTrace();
+                }
 
                 if (delay > 0) {
                     Thread.sleep(delay);
