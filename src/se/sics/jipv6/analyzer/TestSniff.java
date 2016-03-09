@@ -173,6 +173,7 @@ public class TestSniff {
         } else {
             sniff.connect("localhost");
         }
+        /* NOTE: supports input of HEX packets via h:.... other than that is commands */
         BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
         String line;
         try {
@@ -185,6 +186,35 @@ public class TestSniff {
                     //                    System.out.printf("Got packet of %d bytes\n", data.length);
                     //                    System.out.println(line);
                     sniff.packetData(data);
+                } else {
+                    /* Handle some very basic commands - needs improvement - steal from MSPSim soon?! */
+                    if (line.startsWith("set ")) {
+                        String parts[] = line.split(" ");
+                        if (parts.length > 2 ) {
+                            if ("channel".equals(parts[1])) {
+                                try {
+                                    int ch = Integer.parseInt(parts[2]);
+                                    sniff.serialRadio.setRadioChannel(ch);
+                                } catch (Exception e) {
+                                    System.out.println("Failed setting channel to: " + parts[2]);
+                                }
+                            } else {
+                                System.out.println("Unhandled set command:" + line);
+                            }
+                         } else {
+                             System.out.println("Set needs parameter and value:" + line);
+                         }
+                    }
+                    if (line.startsWith("print ")) {
+                        String parts[] = line.split(" ");
+                        if (parts.length > 1) {
+                            if ("nodes".equals(parts[1])) {
+                                sniff.nodeTable.print();
+                            } else if ("stats".equals(parts[1])) {
+                                sniff.analyzer.print();
+                            }
+                        }
+                    }
                 }
             }
         } catch (IOException e) {

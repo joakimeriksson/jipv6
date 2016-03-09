@@ -25,30 +25,20 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     private int ack;
     private int data;
     private int cmd;
-    
+
+    /* used for adding specific data per node */
     private NodeTable nodeTable;
 
     public void init(NodeTable table) {
         this.nodeTable = table;
-        new Thread(new Runnable() {
-            public void run() {
-                while(true) {
-                    try {
-                        Thread.sleep(10000);
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    System.out.printf("Tot:%d DIO:%d ucDIS:%d mcDIS:%d DAO:%d NS:%d Sleep:%d Data:%d 802154: DATA:%d ACK:%d CMD:%d BEACON:%d\n",
-                            totPacket,
-                            dioPacket, ucDISPacket, bcDISPacket,
-                            daoPacket, nsPacket, sleepPacket, dataPacket,
-                            data, ack, cmd, beacon);
-
-                    nodeTable.print();
-                }
-            }
-        }).start();
+    }
+    
+    public void print() {
+        System.out.printf("Tot:%d DIO:%d ucDIS:%d mcDIS:%d DAO:%d NS:%d Sleep:%d Data:%d 802154: DATA:%d ACK:%d CMD:%d BEACON:%d\n",
+                totPacket,
+                dioPacket, ucDISPacket, bcDISPacket,
+                daoPacket, nsPacket, sleepPacket, dataPacket,
+                data, ack, cmd, beacon);
     }
     
     /* MAC packet received */

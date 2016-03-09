@@ -10,4 +10,6 @@ public interface PacketAnalyzer {
     public void analyzePacket(Packet packet, Node sender, Node receiver);
     
     public void analyzeIPPacket(IPv6Packet packet);
+    
+    public void print();
 }

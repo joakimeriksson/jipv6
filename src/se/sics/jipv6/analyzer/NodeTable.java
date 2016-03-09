@@ -1,6 +1,5 @@
 package se.sics.jipv6.analyzer;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import se.sics.jipv6.core.IPv6Packet;
 import se.sics.jipv6.core.Packet;
