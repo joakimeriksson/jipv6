@@ -6,6 +6,8 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 
+import com.sun.org.apache.xerces.internal.util.SynchronizedSymbolTable;
+
 import se.sics.jipv6.core.HC06Packeter;
 import se.sics.jipv6.core.HopByHopOption;
 import se.sics.jipv6.core.ICMP6Packet;
@@ -116,7 +118,14 @@ public class TestSniff {
                             more = false;
                         } else {
                             UDPPacket udpPacket = new UDPPacket();
-                            udpPacket.parsePacketData(ipPacket);
+                            try {
+                                udpPacket.parsePacketData(ipPacket);
+                            } catch (Exception e) {
+                                System.out.println("Failed to parse UDP packet:");
+                                ipPacket.printPacket();
+                                ipPacket.printPacket(System.out);
+                                throw e;
+                            }
                             if (extHeader != null) {
                                 extHeader.setNext(udpPacket);
                             } else {

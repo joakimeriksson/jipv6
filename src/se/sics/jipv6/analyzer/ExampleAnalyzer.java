@@ -44,6 +44,9 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     
     /* used for adding specific data per node */
     private NodeTable nodeTable;
+    private int lastSeqNo;
+    private boolean printAck;
+    
 
     public void init(NodeTable table) {
         this.nodeTable = table;
@@ -83,12 +86,21 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             break;
         case IEEE802154Handler.ACKFRAME:
             ack++;
+            if (printAck) {
+                if(packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO) == lastSeqNo) {
+                    System.out.println("ACKED");
+                    printAck = false;
+                } else {
+                    System.out.print("Wrong ack: " + lastSeqNo + " <> " + packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO));
+                }
+            }
             break;
         case IEEE802154Handler.DATAFRAME:
             data++;
             if (stats != null) {
                 stats.data++;
             }
+            lastSeqNo = packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO);
             break;
         case IEEE802154Handler.CMDFRAME:
             cmd++;
@@ -97,12 +109,18 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             }
             break;
         }
+        if (printAck) {
+            System.out.println(" NO - ACK");
+        }
+        printAck = false;
     }
     
     /* IPv6 packet received */
     public void analyzeIPPacket(IPv6Packet packet) {
         IPPayload payload = packet.getIPPayload();
         totPacket++;
+        long elapsed = packet.getTimeMillis() - startTime;
+        String timeStr = String.format("%d:%02d:%02d.%03d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60, (elapsed / 1000) % 60, elapsed % 1000);
                 
         while (payload instanceof IPv6ExtensionHeader) {
             if (DEBUG) {
@@ -113,10 +131,9 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         }
         if (payload instanceof UDPPacket) {
             byte[] data = ((UDPPacket) payload).getPayload();
-            long elapsed = packet.getTimeMillis() - startTime;
-            String timeStr = String.format("%d:%02d:%02d.%03d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60, (elapsed / 1000) % 60, elapsed % 1000);
 
             if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
+                printAck = true;
                 System.out.print("*** Link Local Message: Possibly Sleep from ");
                 IPv6Packet.printAddress(System.out, packet.getSourceAddress());
                 System.out.print(" to ");
@@ -125,19 +142,21 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 int flag = data[4] & 0xff;
                 int time = (data[6] & 0xff) * 256 + (data[7] & 0xff);
                 if((flag & 0xf) == 0x01) {
-                    System.out.printf("[%s] Sleep Awake in %d: Flag: %02x Dir:%s\n",
+                    System.out.printf("[%s] Sleep Awake in %d: Flag: %02x Dir:%s ",
                             timeStr, time, flag, (flag & 0x80) > 0 ? "D" : "U");
                 } else if ((flag & 0xf) == 0x02) {
-                    System.out.printf("[%s] Sleep Report - no packet recived Flag: %02x Dir:%s\n",
+                    System.out.printf("[%s] Sleep Report - no packet recived Flag: %02x Dir:%s ",
                             timeStr, flag, (flag & 0x80) > 0 ? "D" : "U");
                 } else if ((flag & 0xf) == 0x03) {
-                    System.out.printf("[%s] Sleep Report - packet recived Flag: %02x Dir:%s HoldTime: %d\n",
+                    System.out.printf("[%s] Sleep Report - packet recived Flag: %02x Dir:%s HoldTime: %d ",
                             timeStr, flag, (flag & 0x80) > 0 ? "D" : "U", time);
                 }
                 sleepPacket++;
             } else {
                 dataPacket++;
-                System.out.printf("[%s] *** Message to/from DM Server\n", timeStr);
+                System.out.printf("[%s] *** Message to/from DM Server from: ", timeStr);
+                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                System.out.println();
             }
         } else if (payload instanceof RPLPacket) {
             RPLPacket rpl = (RPLPacket) payload;
@@ -145,12 +164,13 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             case RPLPacket.RPL_DIS:
                 if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
                     /* ... */
-                    System.out.print("*** Probe or repair from ");
+                    printAck = true;
+                    System.out.printf("[%s] *** Probe or repair from: ", timeStr);
                     IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                    System.out.println();
+                    System.out.print(" ");
                     ucDISPacket++;
                 } else {
-                    System.out.print("*** Warning - broadcast DIS!!! from");
+                    System.out.printf("[%s] *** Warning - broadcast DIS!!! from: ", timeStr);
                     IPv6Packet.printAddress(System.out, packet.getSourceAddress());
                     System.out.println();
                     bcDISPacket++;
