@@ -5,9 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-
-import com.sun.org.apache.xerces.internal.util.SynchronizedSymbolTable;
-
 import se.sics.jipv6.core.HC06Packeter;
 import se.sics.jipv6.core.HopByHopOption;
 import se.sics.jipv6.core.ICMP6Packet;
