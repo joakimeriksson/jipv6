@@ -227,8 +227,15 @@ public class IEEE802154Handler extends AbstractPacketHandler {
     lowerLayer.sendPacket(packet);
   }
 
+  public static String getPacketTypeName(int type) {
+      if (type >= 0 && type < TYPE_NAMES.length) {
+          return TYPE_NAMES[type];
+      }
+      return "TYPE(" + type + ")";
+  }
+
   public void printPacket(PrintStream out, Packet packet) {
-    out.print("802.15.4 " + TYPE_NAMES[packet.getAttributeAsInt(PACKET_TYPE)] + " from " + Utils.hex16(packet.getAttributeAsInt(SOURCE_PAN_ID)) + "/");
+    out.print("802.15.4 " + getPacketTypeName(packet.getAttributeAsInt(PACKET_TYPE)) + " from " + Utils.hex16(packet.getAttributeAsInt(SOURCE_PAN_ID)) + "/");
     printAddress(out, packet.getAttributeAsInt(SOURCE_MODE),
         (byte[]) packet.getAttribute(Packet.LL_SOURCE));
     out.print(" to " + Utils.hex16(packet.getAttributeAsInt(DESTINATION_PAN_ID)) + "/");

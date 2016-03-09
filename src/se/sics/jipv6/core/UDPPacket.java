@@ -120,14 +120,13 @@ public class UDPPacket implements IPPayload {
 
   public void printPacket(PrintStream out) {
     out.println("UDP Packet srcPort: " + sourcePort +
-        " destPort: " + destinationPort);
-    out.println("UDP length: " + length);
+        " destPort: " + destinationPort + " length: " + length);
   }
-  
+
   public void parsePacketData(IPv6Packet packet) {
     sourcePort = packet.get16(0);
     destinationPort = packet.get16(2);
-    int length = packet.get16(4);
+    length = packet.get16(4);
     checkSum = packet.get16(6);
 
     if (DEBUG) {

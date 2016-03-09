@@ -65,14 +65,20 @@ public class IPv6Packet extends Packet implements IPPacketer {
   IPPayload ipPayload;
   public NetworkInterface netInterface;
   
+
   public IPv6Packet() {
+      this(System.currentTimeMillis());
+  }
+
+  public IPv6Packet(long time) {
+    super(time);
     version = 6;
     flowLabel = 0;
     hopLimit = 255;
   }
 
   public IPv6Packet(Packet packet) {
-    this();
+    this(packet.getTimeMillis());
     // copy over all the data from the packet...
     // is this the right way to do this???
     this.currentPos = packet.currentPos;
@@ -81,23 +87,6 @@ public class IPv6Packet extends Packet implements IPPacketer {
     ipLen = packetData.length - currentPos;
   }
 
-
-  public static boolean isLinkLocal(byte[] destinationAddress) {
-      return destinationAddress[0] == (byte) 0xfe && destinationAddress[1] == (byte) 0x80;
-  }
-  
-  public static boolean isEqual(byte[] a1, byte[] a2) {
-      if (a1 != null && a2 != null) {
-          if (a1.length != a2.length) return false;
-          for(int i = 0; i < a1.length; i++) {
-              if (a1[i] != a2[i]) return false;
-          }
-          return true;
-      }
-      /* null == null ? */
-      return false;
-  }
-  
   public IPv6Packet(IPPayload pl) {
     this();
     nextHeader = pl.getDispatch();
@@ -108,6 +97,22 @@ public class IPv6Packet extends Packet implements IPPacketer {
     this(pl);
     this.sourceAddress = source;
     this.destAddress = dest;
+  }
+
+  public static boolean isLinkLocal(byte[] destinationAddress) {
+      return destinationAddress[0] == (byte) 0xfe && destinationAddress[1] == (byte) 0x80;
+  }
+
+  public static boolean isEqual(byte[] a1, byte[] a2) {
+      if (a1 != null && a2 != null) {
+          if (a1.length != a2.length) return false;
+          for(int i = 0; i < a1.length; i++) {
+              if (a1[i] != a2[i]) return false;
+          }
+          return true;
+      }
+      /* null == null ? */
+      return false;
   }
 
   public int getTrafficClass() {

@@ -49,10 +49,20 @@ public class Packet {
   
   protected Hashtable<String, Object> attributes = new Hashtable<String, Object>();
 
+  private final long timeMillis;
+
   /* this is the packet data array */
   protected byte[] packetData;
   /* current position of packet data cursor */
   int currentPos = 0;
+
+  public Packet(long time) {
+      this.timeMillis = time;
+  }
+
+  public long getTimeMillis() {
+      return timeMillis;
+  }
 
   public int getPos() {
       return currentPos;

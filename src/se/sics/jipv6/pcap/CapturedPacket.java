@@ -1,9 +1,21 @@
 package se.sics.jipv6.pcap;
 
-public interface CapturedPacket {
+public class CapturedPacket {
 
-    public long getTimeMillis();
+    private final long timeMillis;
+    private final byte[] payload;
 
-    public byte[] getPayload();
+    public CapturedPacket(long timeMillis, byte[] payload) {
+        this.timeMillis = timeMillis;
+        this.payload = payload;
+    }
+
+    public long getTimeMillis() {
+        return timeMillis;
+    }
+
+    public byte[] getPayload() {
+        return payload;
+    }
 
 }

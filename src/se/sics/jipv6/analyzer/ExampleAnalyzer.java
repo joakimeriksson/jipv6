@@ -8,7 +8,6 @@ import se.sics.jipv6.core.Packet;
 import se.sics.jipv6.core.RPLPacket;
 import se.sics.jipv6.core.UDPPacket;
 import se.sics.jipv6.mac.IEEE802154Handler;
-import se.sics.jipv6.util.Utils;
 
 public class ExampleAnalyzer implements PacketAnalyzer {
 
@@ -82,11 +81,14 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 int flag = data[4] & 0xff;
                 int time = (data[6] & 0xff) * 256 + (data[7] & 0xff);
                 if((flag & 0xf) == 0x01) {
-                    System.out.printf("Sleep Awake in %d: Flag: %02x Dir:%s\n", time, flag, (flag & 0x80) > 0 ? "D" : "U");
+                    System.out.printf("[%d] Sleep Awake in %d: Flag: %02x Dir:%s\n",
+                            packet.getTimeMillis(), time, flag, (flag & 0x80) > 0 ? "D" : "U");
                 } else if ((flag & 0xf) == 0x02) {
-                    System.out.printf("Sleep Report - no packet recived Flag: %02x Dir:%s\n", flag, (flag & 0x80) > 0 ? "D" : "U");                    
+                    System.out.printf("[%d] Sleep Report - no packet recived Flag: %02x Dir:%s\n",
+                            packet.getTimeMillis(), flag, (flag & 0x80) > 0 ? "D" : "U");
                 } else if ((flag & 0xf) == 0x03) {
-                    System.out.printf("Sleep Report - packet recived Flag: %02x Dir:%s HoldTime: %d\n", flag, (flag & 0x80) > 0 ? "D" : "U", time);                    
+                    System.out.printf("[%d] Sleep Report - packet recived Flag: %02x Dir:%s HoldTime: %d\n",
+                            packet.getTimeMillis(), flag, (flag & 0x80) > 0 ? "D" : "U", time);
                 }
                 sleepPacket++;
             } else {

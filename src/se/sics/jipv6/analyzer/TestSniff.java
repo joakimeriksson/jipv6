@@ -14,6 +14,7 @@ import se.sics.jipv6.core.IPv6Packet;
 import se.sics.jipv6.core.Packet;
 import se.sics.jipv6.core.UDPPacket;
 import se.sics.jipv6.mac.IEEE802154Handler;
+import se.sics.jipv6.pcap.CapturedPacket;
 import se.sics.jipv6.util.SerialRadioConnection;
 import se.sics.jipv6.util.Utils;
 
@@ -44,7 +45,8 @@ public class TestSniff {
     public void connect(String host, int port) throws UnknownHostException, IOException {
         serialRadio = new SerialRadioConnection(new SerialRadioConnection.PacketListener() {
             public void packetReceived(byte[] data) {
-                packetData(data);
+                CapturedPacket packet = new CapturedPacket(System.currentTimeMillis(), data);
+                packetData(packet);
             }
         });
         if (port < 0) {
@@ -60,9 +62,9 @@ public class TestSniff {
         return this.serialRadio;
     }
 
-    public void packetData(byte[] data) {
-        Packet packet = new Packet();
-        packet.setBytes(data);
+    public void packetData(CapturedPacket captured) {
+        Packet packet = new Packet(captured.getTimeMillis());
+        packet.setBytes(captured.getPayload());
         i154Handler.packetReceived(packet);
         //    packet.printPacket();
         //    i154Handler.printPacket(System.out, packet);
@@ -200,7 +202,8 @@ public class TestSniff {
                     // Print this if verbose?
                     //                    System.out.printf("Got packet of %d bytes\n", data.length);
                     //                    System.out.println(line);
-                    this.packetData(data);
+                    CapturedPacket packet = new CapturedPacket(System.currentTimeMillis(), data);
+                    this.packetData(packet);
                 } else {
                     /* Handle some very basic commands - needs improvement - steal from MSPSim soon?! */
                     if (line.startsWith("set ")) {

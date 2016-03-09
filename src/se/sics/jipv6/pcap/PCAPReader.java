@@ -14,6 +14,7 @@ public class PCAPReader {
     private int snapshotMaxLength;
     private int llayerHeaderType;
     private boolean isStrippingEthernetHeaders = false;
+    private boolean isStrippingCRC = false;
 
     public PCAPReader(String filename) throws IOException {
         this.input = new DataInputStream(new FileInputStream(filename));
@@ -35,6 +36,14 @@ public class PCAPReader {
 
     public void setStripEthernetHeaders(boolean stripEthernetHeaders) {
         this.isStrippingEthernetHeaders = stripEthernetHeaders;
+    }
+
+    public boolean isStrippingCRC() {
+        return isStrippingCRC;
+    }
+
+    public void setStripCRC(boolean isStrippingCRC) {
+        this.isStrippingCRC = isStrippingCRC;
     }
 
     public int getVersionMajor() {
@@ -71,18 +80,25 @@ public class PCAPReader {
         long ms = this.input.readInt() & 0xffffffffL;
         int savedSize = this.input.readInt();
         int capturedSize = this.input.readInt();
-        if (isStrippingEthernetHeaders && llayerHeaderType == 0x01) {
+        if (this.isStrippingEthernetHeaders && this.llayerHeaderType == 0x01) {
             // Skip Ethernet header: 14 bytes
             byte[] hdr = new byte[14];
             this.input.readFully(hdr);
-            savedSize = savedSize - 14;
-            capturedSize = capturedSize - 14;
+            savedSize -= 14;
+            capturedSize -= 14;
+        }
+        if (this.isStrippingCRC) {
+            savedSize -= 2;
+            capturedSize -= 2;
         }
         if (savedSize <= 0) {
             throw new IOException("too small segment");
         }
         byte[] data = new byte[savedSize];
         this.input.readFully(data);
+        if (this.isStrippingCRC) {
+            this.input.readShort();
+        }
         return new PCAPPacket(seconds * 1000000L + ms, capturedSize, data);
     }
 

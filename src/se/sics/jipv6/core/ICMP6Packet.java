@@ -395,7 +395,7 @@ public class ICMP6Packet implements IPPayload {
   
   public static void main(String[] args) {
     byte[] pData = Utils.hexconv("6000000000403a3f200105c01000000a00000000000001ad200105c011024e000212740504030201800070e3de1b00011b87194ad859000008090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f3031323334353637");
-    IPv6Packet packet = new IPv6Packet();
+    IPv6Packet packet = new IPv6Packet(System.currentTimeMillis());
     packet.setBytes(pData);
     packet.parsePacketData(packet);
     if (packet.nextHeader == 58) {

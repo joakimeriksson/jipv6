@@ -1,7 +1,6 @@
 package se.sics.jipv6.analyzer;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 
 import se.sics.jipv6.pcap.PCAPPacket;
 import se.sics.jipv6.pcap.PCAPReader;
@@ -13,7 +12,7 @@ public class Main {
     private static final boolean DEBUG = false;
 
     private static void usage(int status) {
-        System.out.println("Usage: jipv6 [-f file-to-read] [-o file-to-write] [-a host] [-p host-port] [-z analyzer] [-t timing]");
+        System.out.println("Usage: jipv6 [-f file-to-read] [-o file-to-write] [-a host] [-p host-port] [-z analyzer] [-t timing] [-c channel]");
         System.exit(status);
     }
 
@@ -106,22 +105,21 @@ public class Main {
             System.err.println("# Reading from pcap file " + infile);
             PCAPReader reader = new PCAPReader(infile);
             reader.setStripEthernetHeaders(true);
+            reader.setStripCRC(true);
+
             if (DEBUG) System.err.println("# PCAP " + reader.getVersionMajor() + "." + reader.getVersionMinor()
             + " " + reader.getLinkLayerHeaderType());
+
             for (PCAPPacket packet = reader.readPacket(); packet != null; packet = reader.readPacket()) {
                 byte[] packetData = packet.getPayload();
-                if (DEBUG) System.out.println("PCAP(" + packet.getPayloadSize() + "/" + packet.getCapturedSize() + "): " + Utils.bytesToHexString(packet.getPayload()));
-                if (packetData.length > 2) {
-                    // Removing ending CRC
-                    packetData = Arrays.copyOfRange(packetData, 2, packetData.length - 2);
-                    sniff.packetData(packet.getPayload());
+                if (DEBUG) System.out.println("PCAP(" + packetData.length + "/" + packet.getCapturedSize() + "): " + Utils.bytesToHexString(packet.getPayload()));
+                sniff.packetData(packet);
 
-                    if (delay > 0) {
-                        Thread.sleep(delay);
-                    }
-                    if (realtime > 0 && realtime < 100) {
-                        //
-                    }
+                if (delay > 0) {
+                    Thread.sleep(delay);
+                }
+                if (realtime > 0 && realtime < 100) {
+                    //
                 }
             }
             reader.close();
