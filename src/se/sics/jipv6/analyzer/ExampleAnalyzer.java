@@ -8,6 +8,8 @@ import se.sics.jipv6.core.Packet;
 import se.sics.jipv6.core.RPLPacket;
 import se.sics.jipv6.core.UDPPacket;
 import se.sics.jipv6.mac.IEEE802154Handler;
+import se.sics.jipv6.util.Utils;
+import sun.lwawt.LWWindowPeer;
 
 public class ExampleAnalyzer implements PacketAnalyzer {
 
@@ -71,11 +73,15 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             payload = ((IPv6ExtensionHeader) payload).getNext();
         }
         if (payload instanceof UDPPacket) {
-            System.out.println("Analyzer - UDP Packet");
+            byte[] data = ((UDPPacket) payload).getPayload();
+            System.out.println("Analyzer - UDP Packet Payload: " +  data.length);
             if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
                 System.out.print("*** Link Local Message: Possibly Sleep from:");
                 IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                System.out.print(" To: ");
+                IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
                 System.out.println();
+                System.out.println("Payload Bytes: " + Utils.bytesToHexString(data));
                 sleepPacket++;
             } else {
                 dataPacket++;

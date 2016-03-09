@@ -542,6 +542,7 @@ public class HC06Packeter implements IPPacketer {
                 byte[] llsender = packet.getLinkSource(); 
                 System.arraycopy(llsender, 0, packet.sourceAddress, 
                         16 - llsender.length, llsender.length);
+                packet.sourceAddress[8] ^= 0x02;
                 break;
             }
             /* end context based compression */
@@ -574,6 +575,7 @@ public class HC06Packeter implements IPPacketer {
                 byte[] llsender = packet.getLinkSource();
                 System.arraycopy(llsender, 0, packet.sourceAddress, 
                         16 - llsender.length, llsender.length);
+                packet.sourceAddress[8] ^= 0x02;
                 break;
             }
         }
@@ -640,6 +642,7 @@ public class HC06Packeter implements IPPacketer {
                     byte[] llreceiver = packet.getLinkDestination();
                     System.arraycopy(llreceiver, 0, packet.destAddress, 
                             16 - llreceiver.length, llreceiver.length);
+                    packet.destAddress[8] ^= 0x02;
                     break;
                 }      
             } else {
@@ -667,6 +670,7 @@ public class HC06Packeter implements IPPacketer {
                     byte[] llreceiver = packet.getLinkDestination();
                     System.arraycopy(llreceiver, 0, packet.destAddress, 
                             16 - llreceiver.length, llreceiver.length);
+                    packet.destAddress[8] ^= 0x02;
                     break;
                 }
             }
@@ -699,6 +703,7 @@ public class HC06Packeter implements IPPacketer {
                 if (!checksumCompressed) {
                     checkSum = ((packet.getData(hc06_ptr) & 0xff) << 8) +
                             (packet.getData(hc06_ptr + 1) & 0xff);
+                    hc06_ptr += 2;
                 }
 
                 udp = new UDPPacket();
