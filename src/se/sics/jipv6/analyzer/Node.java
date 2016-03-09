@@ -5,7 +5,7 @@ import java.util.HashMap;
 
 public class Node {
     
-    public HashMap<String, Object> properties;
+    public HashMap<String, Object> properties = new HashMap<String,Object>();
     public ArrayList<String> ipAddresses = new ArrayList<String>();
     public ArrayList<String> macAddresses = new ArrayList<String>();
 
@@ -24,7 +24,10 @@ public class Node {
         for(String ip : ipAddresses) {
             System.out.print("  " + ip);            
         }
-        System.out.println("\n   sent: " + packetSent + " recv: " + packetReceived);
+        System.out.println("\n   Sent/Received => sent: " + packetSent + " recv: " + packetReceived);
+        for(String key : properties.keySet()) {
+            System.out.println("   " + key + " => " + properties.get(key).toString());
+        }
     }
 
 }

@@ -48,6 +48,7 @@ import se.sics.jipv6.util.Utils;
 
 public class IEEE802154Handler extends AbstractPacketHandler {
 
+  public static final boolean DEBUG = false;
     
   public static final String SOURCE_PAN_ID = "802154.sourcePAN";
   public static final String SOURCE_MODE = "802154.sourceMode";

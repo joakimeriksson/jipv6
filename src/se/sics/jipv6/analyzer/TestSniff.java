@@ -123,7 +123,7 @@ public class TestSniff {
                                 ipPacket.setIPPayload(udpPacket);
                             }
                             //                        System.out.println("UDP Packet handled...");
-                            udpPacket.printPacket(System.out);
+                            //udpPacket.printPacket(System.out);
                             more = false;
                         }
                         break;
@@ -135,7 +135,7 @@ public class TestSniff {
                             ipPacket.setIPPayload(icmp6Packet);
                         }
                         //                    System.out.println("ICMP6 packet handled...");
-                        icmp6Packet.printPacket(System.out);
+                        //icmp6Packet.printPacket(System.out);
                         more = false;
                         break;
                     default:

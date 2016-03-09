@@ -152,7 +152,7 @@ public class HC06Packeter implements IPPacketer {
         if(lookupContext(packet.destAddress) != -1 ||
                 lookupContext(packet.sourceAddress) != -1) {
             /* set context flag and increase hc06_ptr */
-            System.out.println("IPHC: compressing dest or src ipaddr - setting CID\n");
+            if (DEBUG) System.out.println("IPHC: compressing dest or src ipaddr - setting CID\n");
             data[1] |= SICSLOWPAN_IPHC_CID;
             hc06_ptr++;
         }
@@ -419,7 +419,6 @@ public class HC06Packeter implements IPPacketer {
             int pos = packet.currentPos;
             headerSize = decompress(packet);
             compressedHeaderSize = packet.currentPos - pos;
-            System.out.println("HDR Size: " + headerSize + " Compr:" + compressedHeaderSize);
             packet.currentPos = pos - 4;
         }
                 

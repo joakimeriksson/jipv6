@@ -11,6 +11,7 @@ import se.sics.jipv6.mac.IEEE802154Handler;
 
 public class ExampleAnalyzer implements PacketAnalyzer {
 
+    private static final boolean DEBUG = false;
     private int dioPacket;
     private int bcDISPacket;
     private int ucDISPacket;
@@ -19,43 +20,81 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     private int daoPacket;
     private int nsPacket;
     private int totPacket;
-    
+        
     /* 802.15.4 stats */
     private int beacon;
     private int ack;
     private int data;
     private int cmd;
+    
+    private long bytes;
+    private long startTime;
 
+    class NodeStats {
+        /* MAC stats */
+        int sentBytes;
+        int cmd;
+        int beacon;
+        int data;
+        
+        public String toString() {
+            return "Sent Bytes:" + sentBytes + " Beacon:" + beacon + " Cmd:" + cmd + " Data:" + data;
+        }
+    }
+    
     /* used for adding specific data per node */
     private NodeTable nodeTable;
 
     public void init(NodeTable table) {
         this.nodeTable = table;
+        startTime = System.currentTimeMillis();
     }
     
     public void print() {
-        System.out.printf("Tot:%d DIO:%d ucDIS:%d mcDIS:%d DAO:%d NS:%d Sleep:%d Data:%d 802154: DATA:%d ACK:%d CMD:%d BEACON:%d\n",
+        System.out.printf("Tot:%d DIO:%d ucDIS:%d mcDIS:%d DAO:%d NS:%d Sleep:%d Data:%d 802154: DATA:%d ACK:%d CMD:%d BEACON:%d bytes:%d bytes/sec:%d\n",
                 totPacket,
                 dioPacket, ucDISPacket, bcDISPacket,
                 daoPacket, nsPacket, sleepPacket, dataPacket,
-                data, ack, cmd, beacon);
+                data, ack, cmd, beacon, bytes, bytes * 1000 / (System.currentTimeMillis() - startTime));
     }
     
     /* MAC packet received */
     public void analyzePacket(Packet packet, Node src, Node dst) {
         int type = packet.getAttributeAsInt("802154.type");
+        bytes += packet.getTotalLength() + 5 + 1 + 2; /* Preamble + len + crc */
+        NodeStats stats = null;
+        if (src != null) {
+            stats = (NodeStats) src.properties.get("nodeStats");
+            if (stats == null) {
+                stats = new NodeStats();
+                src.properties.put("nodeStats", stats);
+            }
+            if (stats != null) {
+                stats.sentBytes += packet.getTotalLength() + 5 + 1 + 2;
+            }
+        }
+        
         switch (type) {
         case IEEE802154Handler.BEACONFRAME:
             beacon++;
+            if (stats != null) {
+                stats.beacon++;
+            }
             break;
         case IEEE802154Handler.ACKFRAME:
             ack++;
             break;
         case IEEE802154Handler.DATAFRAME:
             data++;
+            if (stats != null) {
+                stats.data++;
+            }
             break;
         case IEEE802154Handler.CMDFRAME:
             cmd++;
+            if (stats != null) {
+                stats.cmd++;
+            }
             break;
         }
     }
@@ -66,13 +105,17 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         totPacket++;
                 
         while (payload instanceof IPv6ExtensionHeader) {
-            System.out.print("Analyzer - EXT HDR " + payload.getClass().getSimpleName() + ": ");
-            payload.printPacket(System.out);
+            if (DEBUG) {
+                System.out.print("Analyzer - EXT HDR " + payload.getClass().getSimpleName() + ": ");
+                payload.printPacket(System.out);
+            }
             payload = ((IPv6ExtensionHeader) payload).getNext();
         }
         if (payload instanceof UDPPacket) {
             byte[] data = ((UDPPacket) payload).getPayload();
-            System.out.println("Analyzer - UDP Packet Payload: " +  data.length);
+            long elapsed = packet.getTimeMillis() - startTime;
+            String timeStr = String.format("%d:%02d:%02d.%03d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60, (elapsed / 1000) % 60, elapsed % 1000);
+
             if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
                 System.out.print("*** Link Local Message: Possibly Sleep from ");
                 IPv6Packet.printAddress(System.out, packet.getSourceAddress());
@@ -82,19 +125,19 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 int flag = data[4] & 0xff;
                 int time = (data[6] & 0xff) * 256 + (data[7] & 0xff);
                 if((flag & 0xf) == 0x01) {
-                    System.out.printf("[%d] Sleep Awake in %d: Flag: %02x Dir:%s\n",
-                            packet.getTimeMillis(), time, flag, (flag & 0x80) > 0 ? "D" : "U");
+                    System.out.printf("[%s] Sleep Awake in %d: Flag: %02x Dir:%s\n",
+                            timeStr, time, flag, (flag & 0x80) > 0 ? "D" : "U");
                 } else if ((flag & 0xf) == 0x02) {
-                    System.out.printf("[%d] Sleep Report - no packet recived Flag: %02x Dir:%s\n",
-                            packet.getTimeMillis(), flag, (flag & 0x80) > 0 ? "D" : "U");
+                    System.out.printf("[%s] Sleep Report - no packet recived Flag: %02x Dir:%s\n",
+                            timeStr, flag, (flag & 0x80) > 0 ? "D" : "U");
                 } else if ((flag & 0xf) == 0x03) {
-                    System.out.printf("[%d] Sleep Report - packet recived Flag: %02x Dir:%s HoldTime: %d\n",
-                            packet.getTimeMillis(), flag, (flag & 0x80) > 0 ? "D" : "U", time);
+                    System.out.printf("[%s] Sleep Report - packet recived Flag: %02x Dir:%s HoldTime: %d\n",
+                            timeStr, flag, (flag & 0x80) > 0 ? "D" : "U", time);
                 }
                 sleepPacket++;
             } else {
                 dataPacket++;
-                System.out.println("*** Message to/from DM Server");
+                System.out.printf("[%s] *** Message to/from DM Server\n", timeStr);
             }
         } else if (payload instanceof RPLPacket) {
             RPLPacket rpl = (RPLPacket) payload;

@@ -5,6 +5,8 @@ import se.sics.jipv6.util.Utils;
 
 public class HopByHopOption implements IPv6ExtensionHeader {
 
+    public static final boolean DEBUG = false;
+    
     public static final byte DISPATCH = 0;
     byte nextHeader = 0;
     int len;
@@ -30,8 +32,10 @@ public class HopByHopOption implements IPv6ExtensionHeader {
         /* Assumes that this is the correct position */
         nextHeader = packet.getData(0);
         len = packet.getData(1) * 8 + 8;
-        System.out.printf("Parsed HBH Option - NH:%d (%02x) len:%d\n",
-                nextHeader & 0xff, nextHeader & 0xff, len);
+        if (DEBUG) {
+            System.out.printf("Parsed HBH Option - NH:%d (%02x) len:%d\n",
+                    nextHeader & 0xff, nextHeader & 0xff, len);
+        }
         packet.incPos(len);
     }
 

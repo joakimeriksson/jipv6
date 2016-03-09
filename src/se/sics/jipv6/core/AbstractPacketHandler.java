@@ -45,7 +45,7 @@ import java.util.Vector;
 
 public abstract class AbstractPacketHandler implements PacketHandler {
   
-  boolean debug = true;
+  boolean debug = false;
   
   Vector<PacketHandlerDispatch> upperLayers = new Vector<PacketHandlerDispatch>();
   protected PacketHandler lowerLayer;
