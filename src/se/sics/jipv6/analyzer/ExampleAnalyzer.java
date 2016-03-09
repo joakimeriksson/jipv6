@@ -79,8 +79,15 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 IPv6Packet.printAddress(System.out, packet.getSourceAddress());
                 System.out.print(" To: ");
                 IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
-                System.out.println();
-                System.out.println("Payload Bytes: " + Utils.bytesToHexString(data));
+                int flag = data[4] & 0xff;
+                int time = (data[6] & 0xff) * 256 + (data[7] & 0xff);
+                if((flag & 0xf) == 0x01) {
+                    System.out.printf("Sleep Awake in %d: Flag: %02x Dir:%s\n", time, flag, (flag & 0x80) > 0 ? "D" : "U");
+                } else if ((flag & 0xf) == 0x02) {
+                    System.out.printf("Sleep Report - no packet recived Flag: %02x Dir:%s\n", flag, (flag & 0x80) > 0 ? "D" : "U");                    
+                } else if ((flag & 0xf) == 0x03) {
+                    System.out.printf("Sleep Report - packet recived Flag: %02x Dir:%s HoldTime: %d\n", flag, (flag & 0x80) > 0 ? "D" : "U", time);                    
+                }
                 sleepPacket++;
             } else {
                 dataPacket++;
