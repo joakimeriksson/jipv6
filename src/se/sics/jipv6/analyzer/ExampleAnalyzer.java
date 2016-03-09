@@ -9,7 +9,6 @@ import se.sics.jipv6.core.RPLPacket;
 import se.sics.jipv6.core.UDPPacket;
 import se.sics.jipv6.mac.IEEE802154Handler;
 import se.sics.jipv6.util.Utils;
-import sun.lwawt.LWWindowPeer;
 
 public class ExampleAnalyzer implements PacketAnalyzer {
 
