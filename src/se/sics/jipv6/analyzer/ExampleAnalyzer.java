@@ -42,6 +42,20 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         }
     }
     
+    class SleepStats {
+        int sleepSessions; /* number of detected sleep sessions */
+        int sleepReports;
+        long lastReportTime;
+        double avgReport2ResponseTime;
+        public int noPacket;
+        public int packet;
+
+        public String toString() {
+            return "Sleep sessions:" + sleepSessions + " sleepReports:" + sleepReports + " AvgRepRespTime:" + avgReport2ResponseTime;
+        }
+    }
+    
+    
     /* used for adding specific data per node */
     private NodeTable nodeTable;
     private int lastSeqNo;
@@ -126,6 +140,8 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     
     /* IPv6 packet received */
     public void analyzeIPPacket(IPv6Packet packet) {
+        Node sourceNode = nodeTable.getNodeByIP(packet.getSourceAddress());
+        Node destNode = nodeTable.getNodeByIP(packet.getDestinationAddress());
         IPPayload payload = packet.getIPPayload();
         totPacket++;
         // Take the time of first packet as start time
@@ -155,21 +171,63 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 int flag = data[4] & 0xff;
                 int time = (data[6] & 0xff) * 256 + (data[7] & 0xff);
                 if((flag & 0xf) == 0x01) {
+                    if (sourceNode != null) {
+                        SleepStats sleepInfo = (SleepStats) sourceNode.properties.get("sleepInfo");
+                        if (sleepInfo == null) {
+                            sourceNode.properties.put("sleepInfo", sleepInfo = new SleepStats());
+                        }
+                        sleepInfo.sleepSessions++;
+                    }
                     System.out.printf("[%s] Sleep Awake in %d: Flag: %02x Dir:%s ",
                             timeStr, time, flag, (flag & 0x80) > 0 ? "D" : "U");
                 } else if ((flag & 0xf) == 0x02) {
+                    if (destNode != null) {
+                        SleepStats sleepInfo = (SleepStats) destNode.properties.get("sleepInfo");
+                        if (sleepInfo != null) {
+                            sleepInfo.sleepReports++;
+                            sleepInfo.noPacket++;
+                        }
+                    }
                     System.out.printf("[%s] Sleep Report - no packet recived Flag: %02x Dir:%s ",
                             timeStr, flag, (flag & 0x80) > 0 ? "D" : "U");
+
                 } else if ((flag & 0xf) == 0x03) {
                     System.out.printf("[%s] Sleep Report - packet recived Flag: %02x Dir:%s HoldTime: %d ",
                             timeStr, flag, (flag & 0x80) > 0 ? "D" : "U", time);
+                    if (destNode != null) {
+                        SleepStats sleepInfo = (SleepStats) destNode.properties.get("sleepInfo");
+                        if (sleepInfo != null) {
+                            sleepInfo.packet++;
+                            sleepInfo.lastReportTime = packet.getTimeMillis();
+                        }
+                    }
                 }
                 sleepPacket++;
             } else {
                 dataPacket++;
+                printAck = true;
                 System.out.printf("[%s] *** Message to/from DM Server from: ", timeStr);
                 IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                System.out.println();
+                System.out.print(" ");
+                if (sourceNode != null) {                    
+                    SleepStats sleepInfo = (SleepStats) sourceNode.properties.get("sleepInfo");
+                    if (sleepInfo != null) {
+                        long elapsedTime = packet.getTimeMillis() - sleepInfo.lastReportTime;
+                        if(elapsedTime < 1000) {
+                            System.out.printf(" Sleepy Node. Time since report: %d avg: %f ",
+                                    elapsedTime, sleepInfo.avgReport2ResponseTime);
+                            if(sleepInfo.avgReport2ResponseTime == 0) {
+                                sleepInfo.avgReport2ResponseTime = elapsedTime;
+                            } else {
+                                sleepInfo.avgReport2ResponseTime = (sleepInfo.avgReport2ResponseTime * 9.0 + 
+                                        elapsedTime) / 10.0;
+                            }
+                        } else {
+                            System.out.printf(" Sleepy Node. Long Time since report: %d avg: %f ",
+                                    elapsedTime, sleepInfo.avgReport2ResponseTime);                            
+                        }
+                    }
+                }
             }
         } else if (payload instanceof RPLPacket) {
             RPLPacket rpl = (RPLPacket) payload;
