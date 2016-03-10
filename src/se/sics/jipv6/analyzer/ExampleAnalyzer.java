@@ -30,7 +30,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     private long bytes;
     private long startTime;
 
-    class NodeStats {
+    static class NodeStats {
         /* MAC stats */
         int sentBytes;
         int cmd;
@@ -50,21 +50,30 @@ public class ExampleAnalyzer implements PacketAnalyzer {
 
     public void init(NodeTable table) {
         this.nodeTable = table;
-        startTime = System.currentTimeMillis();
     }
     
     public void print() {
+        long elapsed = System.currentTimeMillis() - startTime;
+        if (elapsed < 1) {
+            elapsed = 1;
+        }
         System.out.printf("Tot:%d DIO:%d ucDIS:%d mcDIS:%d DAO:%d NS:%d Sleep:%d Data:%d 802154: DATA:%d ACK:%d CMD:%d BEACON:%d bytes:%d bytes/sec:%d\n",
                 totPacket,
                 dioPacket, ucDISPacket, bcDISPacket,
                 daoPacket, nsPacket, sleepPacket, dataPacket,
-                data, ack, cmd, beacon, bytes, bytes * 1000 / (System.currentTimeMillis() - startTime));
+                data, ack, cmd, beacon, bytes, bytes * 1000 / elapsed);
     }
     
     /* MAC packet received */
     public void analyzePacket(Packet packet, Node src, Node dst) {
         int type = packet.getAttributeAsInt("802154.type");
         bytes += packet.getTotalLength() + 5 + 1 + 2; /* Preamble + len + crc */
+
+        // Take the time of first packet as start time
+        if (startTime == 0) {
+            startTime = packet.getTimeMillis();
+        }
+
         NodeStats stats = null;
         if (src != null) {
             stats = (NodeStats) src.properties.get("nodeStats");
@@ -119,8 +128,8 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     public void analyzeIPPacket(IPv6Packet packet) {
         IPPayload payload = packet.getIPPayload();
         totPacket++;
-        // Adjust the start time if the packet was sent earlier (read from a log file)
-        if (packet.getTimeMillis() < startTime) {
+        // Take the time of first packet as start time
+        if (startTime == 0) {
             startTime = packet.getTimeMillis();
         }
         long elapsed = packet.getTimeMillis() - startTime;

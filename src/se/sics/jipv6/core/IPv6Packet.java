@@ -186,14 +186,14 @@ public class IPv6Packet extends Packet implements IPPacketer {
           if (i > 0) {
               str.append(":");
           }
-          str.append("" + Utils.hex16((((address[i] & 0xff) << 8) | address[i + 1] & 0xff)));
+          str.append(Utils.hex16((((address[i] & 0xff) << 8) | (address[i + 1] & 0xff))));
         }
     return str.toString();
   }
   
   public static void printAddress(PrintStream out, byte[] address) {
     for (int i = 0; i < 16; i+=2) {
-      out.print(Utils.hex16((((address[i] & 0xff) << 8) | address[i + 1] & 0xff)));
+      out.print(Utils.hex16((((address[i] & 0xff) << 8) | (address[i + 1] & 0xff))));
       if (i < 14) {
         out.print(":");
       }

@@ -5,7 +5,7 @@ import se.sics.jipv6.core.IPv6Packet;
 import se.sics.jipv6.core.Packet;
 
 public class NodeTable {
-    public HashMap<String, Node> nodeTable = new HashMap<String,Node>();
+    private final HashMap<String, Node> nodeTable = new HashMap<String,Node>();
 
     public Node getNodeByMAC(byte[] mac) {
         String addr = Packet.macToString(mac);
