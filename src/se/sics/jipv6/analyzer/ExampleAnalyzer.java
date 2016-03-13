@@ -36,6 +36,8 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         int cmd;
         int beacon;
         int data;
+        long lastReq;
+        double avgResponse;
         
         public String toString() {
             return "Sent Bytes:" + sentBytes + " Beacon:" + beacon + " Cmd:" + cmd + " Data:" + data;
@@ -77,6 +79,19 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 daoPacket, nsPacket, sleepPacket, dataPacket,
                 data, ack, cmd, beacon, bytes, bytes * 1000 / elapsed);
     }
+
+    public NodeStats getNodeStats(Node src) {
+        NodeStats stats = null;
+        if (src != null) {
+            stats = (NodeStats) src.properties.get("nodeStats");
+            if (stats == null) {
+                stats = new NodeStats();
+                src.properties.put("nodeStats", stats);
+            }
+        }
+        return stats;
+    }
+
     
     /* MAC packet received */
     public void analyzePacket(Packet packet, Node src, Node dst) {
@@ -88,16 +103,9 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             startTime = packet.getTimeMillis();
         }
 
-        NodeStats stats = null;
-        if (src != null) {
-            stats = (NodeStats) src.properties.get("nodeStats");
-            if (stats == null) {
-                stats = new NodeStats();
-                src.properties.put("nodeStats", stats);
-            }
-            if (stats != null) {
-                stats.sentBytes += packet.getTotalLength() + 5 + 1 + 2;
-            }
+        NodeStats stats = getNodeStats(src);
+        if (stats != null) {
+            stats.sentBytes += packet.getTotalLength() + 5 + 1 + 2;
         }
         
         switch (type) {
@@ -140,6 +148,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     
     /* IPv6 packet received */
     public void analyzeIPPacket(IPv6Packet packet) {
+        long responseTime = 0;
         Node sourceNode = nodeTable.getNodeByIP(packet.getSourceAddress());
         Node destNode = nodeTable.getNodeByIP(packet.getDestinationAddress());
         IPPayload payload = packet.getIPPayload();
@@ -150,7 +159,23 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         }
         long elapsed = packet.getTimeMillis() - startTime;
         String timeStr = String.format("%d:%02d:%02d.%03d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60, (elapsed / 1000) % 60, elapsed % 1000);
-                
+        
+        if (destNode != null) {
+            NodeStats stats = getNodeStats(destNode);
+            if (stats != null) {
+                stats.lastReq = System.currentTimeMillis();
+            }
+        }
+        if (sourceNode != null) {
+            NodeStats stats = getNodeStats(sourceNode);
+            if (stats != null) {
+                if(System.currentTimeMillis() - stats.lastReq < 1000) {
+                    responseTime = System.currentTimeMillis() - stats.lastReq;
+//                    System.out.println("**** Response within " + (System.currentTimeMillis() - stats.lastReq));
+                }
+            }
+        }
+
         while (payload instanceof IPv6ExtensionHeader) {
             if (DEBUG) {
                 System.out.print("Analyzer - EXT HDR " + payload.getClass().getSimpleName() + ": ");
@@ -208,7 +233,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 printAck = true;
                 System.out.printf("[%s] *** Message to/from DM Server from: ", timeStr);
                 IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                System.out.print(" ");
+                System.out.print(" " + (responseTime > 0 ? responseTime + " " : ""));
                 if (sourceNode != null) {                    
                     SleepStats sleepInfo = (SleepStats) sourceNode.properties.get("sleepInfo");
                     if (sleepInfo != null) {
@@ -263,6 +288,6 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 nsPacket++;
             } else {
             }
-        }
+        }        
     }
 }

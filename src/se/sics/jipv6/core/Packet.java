@@ -241,16 +241,19 @@ public class Packet {
   public void copy(int pos, byte[] dst, int dstPos, int len) {
     // TODO Auto-generated method stub
     int tPos = pos + currentPos;
+    if (tPos + len > packetData.length) {
+        System.out.println("Trying to copy data from " + pos + " " + currentPos + " of " + len + " len (totSize: " + packetData.length + ")");
+    }
+    if (len + dstPos > dst.length) {
+        System.out.println("Trying to copy data to " + dstPos + " of " + len + " len (totSize: " + dst.length + ")");
+    }
     System.arraycopy(packetData, tPos, dst, dstPos, len);
   }
 
   /* copies bytes from currentPos + pos to the given array full length */
   public void copy(int pos, byte[] dst, int dstPos) {
-    // TODO Auto-generated method stub
-    int tPos = pos + currentPos;
     int len = getPayloadLength()  - pos;
-    if (DEBUG) System.out.println("Copying data: " + tPos + " Len: " + len);
-    System.arraycopy(packetData, tPos, dst, dstPos, len);
+    copy(pos, dst, dstPos, len);
   }
 
   

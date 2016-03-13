@@ -6,7 +6,7 @@ import java.util.HashMap;
 public class LoWPANFragmenter {
 
     private static final boolean DEBUG = false;
-    
+    private static final int MAX_TIME = 2000; /* no longer than 2 seconds since start before packet is GC:ed */
     class FragmentContext {
         int tag;
         int size;
@@ -49,6 +49,8 @@ public class LoWPANFragmenter {
     
     private HashMap<String, FragmentContext> fragmentMap = new HashMap<String, FragmentContext>();
 
+    
+    
     public boolean handleFragment(IPv6Packet packet, int uncomprSize, int comprSize) {
         int data = packet.getData(0);
 
@@ -56,7 +58,9 @@ public class LoWPANFragmenter {
             /* This is a first fragment */
             int fragSize = packet.get16(0) & 0x7ff;
             int fragTag = packet.get16(2);
-            String id = packet.getLinkDestinationAsString() + "-" + fragTag;
+            String id = packet.getLinkSourceAsString() + "-" + fragTag;
+
+            /* Source and fragTag as indication of packet */
             if (DEBUG) System.out.printf("First Fragment found: size:%d tag:%d ID:%s\n", fragSize, fragTag, id);
             packet.incPos(4);
             
@@ -64,6 +68,8 @@ public class LoWPANFragmenter {
             if (ctx == null) {
                 ctx = new FragmentContext(fragTag, fragSize);
                 fragmentMap.put(id, ctx);
+            } else {
+                if (DEBUG) System.out.println("*** Found context for 1-fragment: age:" + (System.currentTimeMillis() - ctx.time));
             }
             if (ctx.copyData(packet, 0)) {
                 ctx.receivedSize += packet.getPayloadLength() + (uncomprSize - comprSize);
@@ -76,12 +82,14 @@ public class LoWPANFragmenter {
             int fragSize = packet.get16(0) & 0x7ff;
             int fragTag = packet.get16(2);    
             int fragOffset = packet.getData(4) * 8;
-            String id = packet.getLinkDestinationAsString() + "-" + fragTag;
+            String id = packet.getLinkSourceAsString() + "-" + fragTag;
+
             if (DEBUG) System.out.printf("N Fragment found: size:%d tag:%d offset:%d ID:%s\n", fragSize, fragTag, fragOffset, id);
             packet.incPos(5);
             /* here we should handle appending the packet data to the fragment buffers... */
             FragmentContext ctx = fragmentMap.get(id);
             if (ctx == null) {
+                if (DEBUG) System.out.println("Found no context for N-fragment: Create new with ID:" + id);
                 ctx = new FragmentContext(fragTag, fragSize);
                 fragmentMap.put(id, ctx);
             }
