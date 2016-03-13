@@ -158,7 +158,8 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             startTime = packet.getTimeMillis();
         }
         long elapsed = packet.getTimeMillis() - startTime;
-        String timeStr = String.format("%d:%02d:%02d.%03d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60, (elapsed / 1000) % 60, elapsed % 1000);
+        String timeStr = String.format("%d:%02d:%02d.%03d %3d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
+                (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
         
         if (destNode != null) {
             NodeStats stats = getNodeStats(destNode);
@@ -231,7 +232,9 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             } else {
                 dataPacket++;
                 printAck = true;
-                System.out.printf("[%s] *** Message to/from DM Server from: ", timeStr);
+                System.out.printf("[%s] *** UDP Message to ", timeStr);
+                IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
+                System.out.print(" from: ");
                 IPv6Packet.printAddress(System.out, packet.getSourceAddress());
                 System.out.print(" " + (responseTime > 0 ? responseTime + " " : ""));
                 if (sourceNode != null) {                    
@@ -274,9 +277,16 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 break;
             case RPLPacket.RPL_DIO:
                 dioPacket++;
+                String mCast = IPv6Packet.isLinkLocal(packet.getDestinationAddress()) ? "UC" : "MC";
+                System.out.printf("[%s] DIO (" + mCast + ") from: ", timeStr);
+                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                System.out.print(" ");
+                rpl.printPacket(System.out);
                 break;
             case RPLPacket.RPL_DAO:
                 daoPacket++;
+                rpl.printPacket(System.out);
+                System.out.println();
                 break;
             }
         } else if (payload instanceof ICMP6Packet) {

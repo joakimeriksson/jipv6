@@ -287,8 +287,8 @@ public class ICMP6Packet implements IPPayload {
       if (sum == checksum) {
           //System.out.println("ICMPv6: Checksum matches!!!");
       } else {
-          //System.out.println("ICMPv6: Checksum error: " + 
-          //    Utils.hex16(checksum) + " <?> " + Utils.hex16(sum));
+          System.out.println("ICMPv6: Checksum error: " + 
+              Utils.hex16(checksum) + " <?> " + Utils.hex16(sum));
       }
   }
 
