@@ -78,7 +78,7 @@ public class RPLPacket extends ICMP6Packet {
                 packet.copy(0, dagID, 0, 16);
                 packet.incPos(16);
 //                System.out.print(" DAG ID:");
-                IPv6Packet.printAddress(System.out, dagID);
+//                IPv6Packet.printAddress(System.out, dagID);
             }
             
             /* Handle the options */

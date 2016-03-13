@@ -161,6 +161,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         String timeStr = String.format("%d:%02d:%02d.%03d %3d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
                 (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
         
+        /* Unicast messages are assumed to be requests / replies */
         if (destNode != null) {
             NodeStats stats = getNodeStats(destNode);
             if (stats != null) {
@@ -172,6 +173,8 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             if (stats != null) {
                 if(System.currentTimeMillis() - stats.lastReq < 1000) {
                     responseTime = System.currentTimeMillis() - stats.lastReq;
+                    /* clear lastReq */
+                    stats.lastReq = 0;
 //                    System.out.println("**** Response within " + (System.currentTimeMillis() - stats.lastReq));
                 }
             }
@@ -285,7 +288,15 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 break;
             case RPLPacket.RPL_DAO:
                 daoPacket++;
+                System.out.printf("[%s] DAO from: ", timeStr);
+                IPv6Packet.printAddress(System.out, packet.getSourceAddress());     
+                System.out.print(" ");
                 rpl.printPacket(System.out);
+                System.out.println();
+                break;
+            case RPLPacket.RPL_DAO_ACK:
+                System.out.printf("[%s] DAO ACK from: ", timeStr);
+                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
                 System.out.println();
                 break;
             }
@@ -296,7 +307,10 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 IPv6Packet.printAddress(System.out, packet.getSourceAddress());
                 System.out.println();
                 nsPacket++;
-            } else {
+            } else if (icmp6.getType() == ICMP6Packet.ECHO_REPLY) {
+                if (responseTime < 1000 && responseTime > 0) {
+                    System.out.printf("[%s] Echo Reply within: %d\n", timeStr, responseTime);
+                }
             }
         }        
     }
