@@ -1,5 +1,6 @@
 package se.sics.jipv6.pcap;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -17,7 +18,7 @@ public class PCAPReader {
     private boolean isStrippingCRC = false;
 
     public PCAPReader(String filename) throws IOException {
-        this.input = new DataInputStream(new FileInputStream(filename));
+        this.input = new DataInputStream(new BufferedInputStream(new FileInputStream(filename)));
         int magic = this.input.readInt();
         if (magic != 0xa1b2c3d4) {
             throw new IOException("Not a PCAP file: " + filename);

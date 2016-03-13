@@ -45,7 +45,6 @@ public class Packet {
 
   public static final String LL_SOURCE = "link.source";
   public static final String LL_DESTINATION = "link.destination";
-  private static final boolean DEBUG = false;
   
   protected Hashtable<String, Object> attributes = new Hashtable<String, Object>();
 
@@ -239,7 +238,6 @@ public class Packet {
 
   /* copies bytes from currentPos + pos to the given array */
   public void copy(int pos, byte[] dst, int dstPos, int len) {
-    // TODO Auto-generated method stub
     int tPos = pos + currentPos;
     if (tPos + len > packetData.length) {
         System.out.println("Trying to copy data from " + pos + " " + currentPos + " of " + len + " len (totSize: " + packetData.length + ")");

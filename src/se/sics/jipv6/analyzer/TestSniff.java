@@ -14,6 +14,7 @@ import se.sics.jipv6.core.Packet;
 import se.sics.jipv6.core.UDPPacket;
 import se.sics.jipv6.mac.IEEE802154Handler;
 import se.sics.jipv6.pcap.CapturedPacket;
+import se.sics.jipv6.pcap.PCAPWriter;
 import se.sics.jipv6.util.SerialRadioConnection;
 import se.sics.jipv6.util.Utils;
 
@@ -26,6 +27,7 @@ public class TestSniff {
     SerialRadioConnection serialRadio;
     
     NodeTable nodeTable = new NodeTable();
+    private PCAPWriter pcapOutput;
 
     public TestSniff(PacketAnalyzer a) {
         analyzer = a;
@@ -64,6 +66,16 @@ public class TestSniff {
     public void packetData(CapturedPacket captured) {
         Packet packet = new Packet(captured.getTimeMillis());
         packet.setBytes(captured.getPayload());
+
+        if (pcapOutput != null) {
+            try {
+                pcapOutput.writePacket(captured);
+            } catch (IOException e) {
+                System.err.println("Failed to write to PCAP file");
+                e.printStackTrace();
+            }
+        }
+
         i154Handler.packetReceived(packet);
         //    packet.printPacket();
         //    i154Handler.printPacket(System.out, packet);
@@ -167,6 +179,10 @@ public class TestSniff {
         } 
     }
 
+    public void setPCAPOutFile(String outfile) throws IOException {
+        this.pcapOutput = new PCAPWriter(outfile);
+        this.pcapOutput.setAddingCRC(true);
+    }
 
     public static void main(String[] args) throws ClassNotFoundException, InstantiationException, 
     IllegalAccessException, UnknownHostException, IOException {

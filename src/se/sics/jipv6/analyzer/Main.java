@@ -134,8 +134,8 @@ public class Main {
         }
 
         if (outfile != null) {
-//            System.err.println("# Exporting to log file " + outfile);
-//            sniff.setOutFile(outfile);
+            System.err.println("# Exporting to log file " + outfile);
+            sniff.setPCAPOutFile(outfile);
         }
 
         System.err.println("# Connecting to serial radio");
