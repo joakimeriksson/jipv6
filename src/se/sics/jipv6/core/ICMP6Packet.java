@@ -209,8 +209,8 @@ public class ICMP6Packet implements IPPayload {
         if ((i & 1) == 1) out.print(":");
       }
       out.println("/" + bits);
-      out.println("RA Valid Lifetime: " + Packet.get32(prefixInfo, 4));
-      out.println("RA Pref. Lifetime: " + Packet.get32(prefixInfo, 8));
+      out.println("RA Valid Lifetime: " + MacPacket.get32(prefixInfo, 4));
+      out.println("RA Pref. Lifetime: " + MacPacket.get32(prefixInfo, 8));
       byte[] srcLink = getOption(SOURCE_LINKADDR);
       if (srcLink != null) {
         /* assuming 8 bytes for the mac ??? */

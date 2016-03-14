@@ -1,48 +1,27 @@
 package se.sics.jipv6.analyzer;
 
+import java.io.PrintStream;
+
+import se.sics.jipv6.analyzer.NodeTable.NodeStats;
 import se.sics.jipv6.core.ICMP6Packet;
 import se.sics.jipv6.core.IPPayload;
 import se.sics.jipv6.core.IPv6ExtensionHeader;
 import se.sics.jipv6.core.IPv6Packet;
-import se.sics.jipv6.core.Packet;
-import se.sics.jipv6.core.RPLPacket;
+import se.sics.jipv6.core.MacPacket;
 import se.sics.jipv6.core.UDPPacket;
-import se.sics.jipv6.mac.IEEE802154Handler;
+import se.sics.jipv6.pcap.CapturedPacket;
 
 public class ExampleAnalyzer implements PacketAnalyzer {
 
     private static final boolean DEBUG = false;
-    private int dioPacket;
-    private int bcDISPacket;
-    private int ucDISPacket;
+   
     private int dataPacket;
     private int sleepPacket;
-    private int daoPacket;
     private int nsPacket;
     private int totPacket;
         
-    /* 802.15.4 stats */
-    private int beacon;
-    private int ack;
-    private int data;
-    private int cmd;
-    
-    private long bytes;
-    private long startTime;
 
-    static class NodeStats {
-        /* MAC stats */
-        int sentBytes;
-        int cmd;
-        int beacon;
-        int data;
-        long lastReq;
-        double avgResponse;
-        
-        public String toString() {
-            return "Sent Bytes:" + sentBytes + " Beacon:" + beacon + " Cmd:" + cmd + " Data:" + data;
-        }
-    }
+    private long startTime;
     
     class SleepStats {
         int sleepSessions; /* number of detected sleep sessions */
@@ -57,12 +36,8 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         }
     }
     
-    
     /* used for adding specific data per node */
     private NodeTable nodeTable;
-    private int lastSeqNo;
-    private boolean printAck;
-    
 
     public void init(NodeTable table) {
         this.nodeTable = table;
@@ -73,103 +48,45 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         if (elapsed < 1) {
             elapsed = 1;
         }
-        System.out.printf("Tot:%d DIO:%d ucDIS:%d mcDIS:%d DAO:%d NS:%d Sleep:%d Data:%d 802154: DATA:%d ACK:%d CMD:%d BEACON:%d bytes:%d bytes/sec:%d\n",
+        System.out.printf("Example Analyzer: Tot:%d NS:%d Sleep:%d Data:%d\n",
                 totPacket,
-                dioPacket, ucDISPacket, bcDISPacket,
-                daoPacket, nsPacket, sleepPacket, dataPacket,
-                data, ack, cmd, beacon, bytes, bytes * 1000 / elapsed);
+                nsPacket, sleepPacket, dataPacket);
     }
 
-    public NodeStats getNodeStats(Node src) {
-        NodeStats stats = null;
-        if (src != null) {
-            stats = (NodeStats) src.properties.get("nodeStats");
-            if (stats == null) {
-                stats = new NodeStats();
-                src.properties.put("nodeStats", stats);
-            }
-        }
-        return stats;
+    public void printFromTo(PrintStream out, IPv6Packet packet) {
+        out.print("from ");
+        IPv6Packet.printAddress(out, packet.getSourceAddress());
+        out.print(" to ");
+        IPv6Packet.printAddress(out, packet.getDestinationAddress());
     }
-
     
     /* MAC packet received */
-    public void analyzePacket(Packet packet, Node src, Node dst) {
-        int type = packet.getAttributeAsInt("802154.type");
-        bytes += packet.getTotalLength() + 5 + 1 + 2; /* Preamble + len + crc */
-
-        // Take the time of first packet as start time
-        if (startTime == 0) {
-            startTime = packet.getTimeMillis();
-        }
-
-        NodeStats stats = getNodeStats(src);
-        if (stats != null) {
-            stats.sentBytes += packet.getTotalLength() + 5 + 1 + 2;
-        }
-        
-        switch (type) {
-        case IEEE802154Handler.BEACONFRAME:
-            beacon++;
-            if (stats != null) {
-                stats.beacon++;
-            }
-            break;
-        case IEEE802154Handler.ACKFRAME:
-            ack++;
-            if (printAck) {
-                if(packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO) == lastSeqNo) {
-                    System.out.println("ACKED");
-                    printAck = false;
-                } else {
-                    System.out.print("Wrong ack: " + lastSeqNo + " <> " + packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO));
-                }
-            }
-            break;
-        case IEEE802154Handler.DATAFRAME:
-            data++;
-            if (stats != null) {
-                stats.data++;
-            }
-            lastSeqNo = packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO);
-            break;
-        case IEEE802154Handler.CMDFRAME:
-            cmd++;
-            if (stats != null) {
-                stats.cmd++;
-            }
-            break;
-        }
-        if (printAck) {
-            System.out.println(" NO - ACK");
-        }
-        printAck = false;
+    public boolean analyzeMacPacket(MacPacket packet, Node src, Node dst) {
+        /* allow other analyzers to continue */
+        return true;
     }
     
     /* IPv6 packet received */
-    public void analyzeIPPacket(IPv6Packet packet) {
+    public boolean analyzeIPPacket(IPv6Packet packet, Node macSource, Node macDestination) {
         long responseTime = 0;
         Node sourceNode = nodeTable.getNodeByIP(packet.getSourceAddress());
         Node destNode = nodeTable.getNodeByIP(packet.getDestinationAddress());
         IPPayload payload = packet.getIPPayload();
         totPacket++;
         // Take the time of first packet as start time
-        if (startTime == 0) {
-            startTime = packet.getTimeMillis();
-        }
-        long elapsed = packet.getTimeMillis() - startTime;
+        long elapsed = nodeTable.getElapsed();
         String timeStr = String.format("%d:%02d:%02d.%03d %3d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
                 (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
         
         /* Unicast messages are assumed to be requests / replies */
         if (destNode != null) {
-            NodeStats stats = getNodeStats(destNode);
+            NodeStats stats = nodeTable.getNodeStats(destNode);
             if (stats != null) {
                 stats.lastReq = System.currentTimeMillis();
             }
         }
         if (sourceNode != null) {
-            NodeStats stats = getNodeStats(sourceNode);
+            NodeStats stats = nodeTable.getNodeStats(sourceNode);
             if (stats != null) {
                 if(System.currentTimeMillis() - stats.lastReq < 1000) {
                     responseTime = System.currentTimeMillis() - stats.lastReq;
@@ -191,12 +108,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             byte[] data = ((UDPPacket) payload).getPayload();
 
             if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
-                printAck = true;
-                System.out.print("*** Link Local Message: Possibly Sleep from ");
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                System.out.print(" to ");
-                IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
-                System.out.println();
+                nodeTable.printAck = true;
                 int flag = data[4] & 0xff;
                 int time = (data[6] & 0xff) * 256 + (data[7] & 0xff);
                 if((flag & 0xf) == 0x01) {
@@ -234,11 +146,9 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 sleepPacket++;
             } else {
                 dataPacket++;
-                printAck = true;
-                System.out.printf("[%s] *** UDP Message to ", timeStr);
-                IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
-                System.out.print(" from: ");
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                nodeTable.printAck = true;
+                System.out.printf("[%s] *** UDP Message ", timeStr);
+                printFromTo(System.out, packet);
                 System.out.print(" " + (responseTime > 0 ? responseTime + " " : ""));
                 if (sourceNode != null) {                    
                     SleepStats sleepInfo = (SleepStats) sourceNode.properties.get("sleepInfo");
@@ -260,58 +170,29 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                     }
                 }
             }
-        } else if (payload instanceof RPLPacket) {
-            RPLPacket rpl = (RPLPacket) payload;
-            switch (rpl.getCode()) {
-            case RPLPacket.RPL_DIS:
-                if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
-                    /* ... */
-                    printAck = true;
-                    System.out.printf("[%s] *** Probe or repair from: ", timeStr);
-                    IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                    System.out.print(" ");
-                    ucDISPacket++;
-                } else {
-                    System.out.printf("[%s] *** Warning - broadcast DIS!!! from: ", timeStr);
-                    IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                    System.out.println();
-                    bcDISPacket++;
-                }
-                break;
-            case RPLPacket.RPL_DIO:
-                dioPacket++;
-                String mCast = IPv6Packet.isLinkLocal(packet.getDestinationAddress()) ? "UC" : "MC";
-                System.out.printf("[%s] DIO (" + mCast + ") from: ", timeStr);
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                System.out.print(" ");
-                rpl.printPacket(System.out);
-                break;
-            case RPLPacket.RPL_DAO:
-                daoPacket++;
-                System.out.printf("[%s] DAO from: ", timeStr);
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());     
-                System.out.print(" ");
-                rpl.printPacket(System.out);
-                System.out.println();
-                break;
-            case RPLPacket.RPL_DAO_ACK:
-                System.out.printf("[%s] DAO ACK from: ", timeStr);
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                System.out.println();
-                break;
-            }
         } else if (payload instanceof ICMP6Packet) {
             ICMP6Packet icmp6 = (ICMP6Packet) payload;
             if (icmp6.getType() == ICMP6Packet.NEIGHBOR_SOLICITATION) {
-                System.out.print("*** Warning - Neighbor solicitation!!! from: ");
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                System.out.print("*** Warning - Neighbor solicitation!!! ");
+                printFromTo(System.out, packet);
                 System.out.println();
                 nsPacket++;
             } else if (icmp6.getType() == ICMP6Packet.ECHO_REPLY) {
                 if (responseTime < 1000 && responseTime > 0) {
-                    System.out.printf("[%s] Echo Reply within: %d\n", timeStr, responseTime);
+                    System.out.printf("[%s] Echo Reply within: %d", timeStr, responseTime);
+                    printFromTo(System.out, packet);
+                    System.out.println();
                 }
             }
-        }        
+        }
+        return true;
+    }
+
+
+    @Override
+    public boolean analyzeRawPacket(CapturedPacket packet) {
+        // TODO Auto-generated method stub
+        /* True => continue */
+        return true;
     }
 }

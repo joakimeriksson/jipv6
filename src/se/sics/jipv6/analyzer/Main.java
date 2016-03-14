@@ -88,7 +88,7 @@ public class Main {
         }
 
         if (analyzerName == null) {
-            analyzerName = TestSniff.getJarManifestProperty("DefaultPacketAnalyzer");
+            analyzerName = JShark.getJarManifestProperty("DefaultPacketAnalyzer");
         }
         if (analyzerName == null) {
             analyzerName = "se.sics.jipv6.analyzer.ExampleAnalyzer";
@@ -100,7 +100,7 @@ public class Main {
             usage(1);
         }
 
-        TestSniff sniff = new TestSniff(analyzer);
+        JShark sniff = new JShark(analyzer);
         if (infile != null) {
             System.err.println("# Reading from pcap file " + infile);
             PCAPReader reader = new PCAPReader(infile);

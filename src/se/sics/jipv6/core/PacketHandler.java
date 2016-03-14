@@ -44,7 +44,7 @@ public interface PacketHandler {
 
   public void addUpperLayerHandler(int protoID,PacketHandler handler);
   public void setLowerLayerHandler(PacketHandler handler);
-  public void packetReceived(Packet container);
-  public void sendPacket(Packet packet);
+  public void packetReceived(MacPacket container);
+  public void sendPacket(MacPacket packet);
   
 }

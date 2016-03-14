@@ -43,7 +43,7 @@ import se.sics.jipv6.core.AbstractPacketHandler;
 import se.sics.jipv6.core.IPStack;
 import se.sics.jipv6.core.IPv6Packet;
 import se.sics.jipv6.core.NetworkInterface;
-import se.sics.jipv6.core.Packet;
+import se.sics.jipv6.core.MacPacket;
 
 public class LoWPANHandler extends AbstractPacketHandler implements NetworkInterface {
   
@@ -64,7 +64,7 @@ public class LoWPANHandler extends AbstractPacketHandler implements NetworkInter
     return true;
   }
   
-  public void packetReceived(Packet packet) {
+  public void packetReceived(MacPacket packet) {
     /* create IP packet based on the correct dispatch */
     IPv6Packet ipPacket = new IPv6Packet(packet);
     int dispatch = packet.getData(0);
@@ -92,7 +92,7 @@ public class LoWPANHandler extends AbstractPacketHandler implements NetworkInter
     lowerLayer.sendPacket(packet);
   }
 
-  public void sendPacket(Packet packet) {
+  public void sendPacket(MacPacket packet) {
     sendPacket((IPv6Packet) packet);
   }
 

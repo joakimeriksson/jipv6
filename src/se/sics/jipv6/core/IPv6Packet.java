@@ -47,7 +47,7 @@ import se.sics.jipv6.util.Utils;
  * @author Joakim Eriksson, SICS
  *
  */
-public class IPv6Packet extends Packet implements IPPacketer {
+public class IPv6Packet extends MacPacket implements IPPacketer {
 
   public static final int ICMP6_DISPATCH = 58;
   public static final boolean DEBUG = false; // true;
@@ -77,7 +77,7 @@ public class IPv6Packet extends Packet implements IPPacketer {
     hopLimit = 255;
   }
 
-  public IPv6Packet(Packet packet) {
+  public IPv6Packet(MacPacket packet) {
     this(packet.getTimeMillis());
     // copy over all the data from the packet...
     // is this the right way to do this???

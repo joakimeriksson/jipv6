@@ -41,7 +41,7 @@
 package se.sics.jipv6.core;
 import java.util.Hashtable;
 
-public class Packet {
+public class MacPacket {
 
   public static final String LL_SOURCE = "link.source";
   public static final String LL_DESTINATION = "link.destination";
@@ -55,7 +55,7 @@ public class Packet {
   /* current position of packet data cursor */
   int currentPos = 0;
 
-  public Packet(long time) {
+  public MacPacket(long time) {
       this.timeMillis = time;
   }
 

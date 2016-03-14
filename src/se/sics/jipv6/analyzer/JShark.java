@@ -1,3 +1,41 @@
+/**
+ * Copyright (c) 2016, Swedish Institute of Computer Science.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Institute nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * This file is part of jipv6.
+ *
+ * JShark - a Java based packet sniffer and analyzer.
+ *
+ * -----------------------------------------------------------------
+ *
+ *
+ * Author  : Joakim Eriksson
+ * Created :  mar 2016
+ *
+ */
 package se.sics.jipv6.analyzer;
 
 import java.io.BufferedReader;
@@ -5,12 +43,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+
 import se.sics.jipv6.core.HC06Packeter;
 import se.sics.jipv6.core.HopByHopOption;
 import se.sics.jipv6.core.ICMP6Packet;
 import se.sics.jipv6.core.IPv6ExtensionHeader;
 import se.sics.jipv6.core.IPv6Packet;
-import se.sics.jipv6.core.Packet;
+import se.sics.jipv6.core.MacPacket;
 import se.sics.jipv6.core.UDPPacket;
 import se.sics.jipv6.mac.IEEE802154Handler;
 import se.sics.jipv6.pcap.CapturedPacket;
@@ -18,10 +58,10 @@ import se.sics.jipv6.pcap.PCAPWriter;
 import se.sics.jipv6.util.SerialRadioConnection;
 import se.sics.jipv6.util.Utils;
 
-public class TestSniff {
+public class JShark {
     /* Run JIPv6 over TUN on linux of OS-X */
 
-    PacketAnalyzer analyzer;
+    ArrayList<PacketAnalyzer> analyzers = new ArrayList<PacketAnalyzer>();
     IEEE802154Handler i154Handler;
     HC06Packeter hc06Packeter;
     SerialRadioConnection serialRadio;
@@ -29,13 +69,15 @@ public class TestSniff {
     NodeTable nodeTable = new NodeTable();
     private PCAPWriter pcapOutput;
 
-    public TestSniff(PacketAnalyzer a) {
-        analyzer = a;
+    public JShark(PacketAnalyzer a) {
+        analyzers.add(new MACAnalyzer());
+        analyzers.add(new RPLAnalyzer());
+        analyzers.add(a);
         i154Handler = new IEEE802154Handler();
         hc06Packeter = new HC06Packeter();
         hc06Packeter.setContext(0, 0xaaaa0000, 0, 0, 0);
-        if (a != null) {
-            a.init(nodeTable);
+        for (PacketAnalyzer analyzer : analyzers) {
+            analyzer.init(nodeTable);
         }
     }
 
@@ -64,7 +106,7 @@ public class TestSniff {
     }
 
     public void packetData(CapturedPacket captured) {
-        Packet packet = new Packet(captured.getTimeMillis());
+        MacPacket packet = new MacPacket(captured.getTimeMillis());
         packet.setBytes(captured.getPayload());
 
         if (pcapOutput != null) {
@@ -75,6 +117,14 @@ public class TestSniff {
                 e.printStackTrace();
             }
         }
+        
+        /* Allow all analyzers run on the raw packet */
+        for(PacketAnalyzer analyzer: analyzers) {
+            if (!analyzer.analyzeRawPacket(captured)) {
+                break;
+            }
+        }
+
 
         i154Handler.packetReceived(packet);
         //    packet.printPacket();
@@ -95,9 +145,11 @@ public class TestSniff {
             receiver.seqNo = packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO);
         }
 
-        
-        if (analyzer != null) {
-            analyzer.analyzePacket(packet, sender, receiver);
+        for(PacketAnalyzer analyzer: analyzers) {
+            if (!analyzer.analyzeMacPacket(packet, sender, receiver)) {
+                System.out.println("Analyzer " + analyzer.getClass().getName() + " returned false...");
+                break;
+            }
         }
 
         if (packet.getPayloadLength() > 1 && 
@@ -171,9 +223,10 @@ public class TestSniff {
                         nodeTable.addIPAddr(node, destination);
                     }
                 }
-                
-                if (analyzer != null) {
-                    analyzer.analyzeIPPacket(ipPacket);
+                for(PacketAnalyzer analyzer: analyzers) {                    
+                    if (!analyzer.analyzeIPPacket(ipPacket, sender, receiver)) {
+                        break;
+                    }
                 }
             }
         } 
@@ -189,7 +242,7 @@ public class TestSniff {
         PacketAnalyzer analyzer = null;
         if (args.length > 0) {
             if ("help".equals(args[0]) || "-h".equals(args[0])) {
-                System.out.println("Usage: " + TestSniff.class.getSimpleName() + " [packetanalyzer] [host]");
+                System.out.println("Usage: " + JShark.class.getSimpleName() + " [packetanalyzer] [host]");
                 System.exit(0);
             }
             Class<?> paClass = Class.forName(args[0]);
@@ -202,7 +255,7 @@ public class TestSniff {
                 analyzer = (PacketAnalyzer) paClass.newInstance();
             }
         }
-        TestSniff sniff = new TestSniff(analyzer);
+        JShark sniff = new JShark(analyzer);
         if(args.length > 1) {
             sniff.connect(args[1]);
         } else {
@@ -265,7 +318,9 @@ public class TestSniff {
                             if ("nodes".equals(parts[1])) {
                                 this.nodeTable.print();
                             } else if ("stats".equals(parts[1])) {
-                                this.analyzer.print();
+                                for(PacketAnalyzer analyzer: analyzers) {
+                                    analyzer.print();
+                                }
                             }
                         }
                     } else if (line.equals("q") || line.equals("quit")) {

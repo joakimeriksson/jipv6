@@ -43,7 +43,7 @@ package se.sics.jipv6.mac;
 import java.io.PrintStream;
 
 import se.sics.jipv6.core.AbstractPacketHandler;
-import se.sics.jipv6.core.Packet;
+import se.sics.jipv6.core.MacPacket;
 import se.sics.jipv6.util.Utils;
 
 public class IEEE802154Handler extends AbstractPacketHandler {
@@ -90,7 +90,7 @@ public class IEEE802154Handler extends AbstractPacketHandler {
   /* create a 802.15.4 packet of the bytes and "dispatch" to the
    * next handler
    */
-  public void packetReceived(Packet packet) {
+  public void packetReceived(MacPacket packet) {
 //    IEEE802154Packet newPacket = new IEEE802154Packet(packet);
     /* no dispatch at this level ?! */
       
@@ -118,14 +118,14 @@ public class IEEE802154Handler extends AbstractPacketHandler {
         destAddress[1] = packet.getData(pos);
         destAddress[0] = packet.getData(pos + 1);
         pos += 2;
-        packet.setAttribute(Packet.LL_DESTINATION, destAddress);
+        packet.setAttribute(MacPacket.LL_DESTINATION, destAddress);
       } else if (destAddrMode == LONG_ADDRESS) {
         byte[] destAddress = new byte[8];
         for (int i = 0; i < 8; i++) {
           destAddress[i] = packet.getData(pos + 7 - i);
         }
         pos += 8;
-        packet.setAttribute(Packet.LL_DESTINATION, destAddress);
+        packet.setAttribute(MacPacket.LL_DESTINATION, destAddress);
       } else {
           // No destination address
       }
@@ -146,14 +146,14 @@ public class IEEE802154Handler extends AbstractPacketHandler {
         sourceAddress[1] = packet.getData(pos);
         sourceAddress[0] = packet.getData(pos + 1);        
         pos += 2;
-        packet.setAttribute(Packet.LL_SOURCE, sourceAddress);
+        packet.setAttribute(MacPacket.LL_SOURCE, sourceAddress);
       } else if (srcAddrMode == LONG_ADDRESS) {
         byte[] sourceAddress = new byte[8];
         for (int i = 0; i < 8; i++) {
           sourceAddress[i] = packet.getData(pos + 7 - i);
         }
         pos += 8;
-        packet.setAttribute(Packet.LL_SOURCE, sourceAddress);
+        packet.setAttribute(MacPacket.LL_SOURCE, sourceAddress);
       } else {
           // No source address
       }
@@ -174,7 +174,7 @@ public class IEEE802154Handler extends AbstractPacketHandler {
   
   /* create a 802.15.4 packet with the given packet as payload, and
    * deliver to the lower layer handler */
-  public void sendPacket(Packet packet) {
+  public void sendPacket(MacPacket packet) {
     System.out.println("Packet should be sent!!!");
     byte[] buffer = new byte[127];
     int pos = 0;
@@ -235,13 +235,13 @@ public class IEEE802154Handler extends AbstractPacketHandler {
       return "TYPE(" + type + ")";
   }
 
-  public void printPacket(PrintStream out, Packet packet) {
+  public void printPacket(PrintStream out, MacPacket packet) {
     out.print("802.15.4 " + getPacketTypeName(packet.getAttributeAsInt(PACKET_TYPE)) + " from " + Utils.hex16(packet.getAttributeAsInt(SOURCE_PAN_ID)) + "/");
     printAddress(out, packet.getAttributeAsInt(SOURCE_MODE),
-        (byte[]) packet.getAttribute(Packet.LL_SOURCE));
+        (byte[]) packet.getAttribute(MacPacket.LL_SOURCE));
     out.print(" to " + Utils.hex16(packet.getAttributeAsInt(DESTINATION_PAN_ID)) + "/");
     printAddress(out, packet.getAttributeAsInt(DESTINATION_MODE),
-          (byte[]) packet.getAttribute(Packet.LL_DESTINATION));
+          (byte[]) packet.getAttribute(MacPacket.LL_DESTINATION));
     out.println(" seqNo: " + packet.getAttributeAsInt(SEQ_NO) + " vers: " + 
         packet.getAttributeAsInt(VERSION) + " len: " +
         packet.getAttributeAsInt(PAYLOAD_LEN));

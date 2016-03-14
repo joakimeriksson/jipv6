@@ -66,7 +66,7 @@ public abstract class AbstractPacketHandler implements PacketHandler {
   }
 
   /* incoming packets ... */
-  protected void dispatch(int dispatch, Packet packet) {
+  protected void dispatch(int dispatch, MacPacket packet) {
     if (debug) {
       printPacket(System.out, packet);
     }
@@ -83,11 +83,11 @@ public abstract class AbstractPacketHandler implements PacketHandler {
     }
   }
   
-  public abstract void packetReceived(Packet container);
+  public abstract void packetReceived(MacPacket container);
 
-  public abstract void sendPacket(Packet packet);
+  public abstract void sendPacket(MacPacket packet);
 
-  public void printPacket(PrintStream out, Packet packet) {
+  public void printPacket(PrintStream out, MacPacket packet) {
   }
   
   public static class PacketHandlerDispatch {

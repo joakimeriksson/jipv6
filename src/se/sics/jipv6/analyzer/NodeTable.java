@@ -2,13 +2,51 @@ package se.sics.jipv6.analyzer;
 import java.util.HashMap;
 
 import se.sics.jipv6.core.IPv6Packet;
-import se.sics.jipv6.core.Packet;
+import se.sics.jipv6.core.MacPacket;
 
 public class NodeTable {
     private final HashMap<String, Node> nodeTable = new HashMap<String,Node>();
 
+    private long startTime;
+
+    public boolean printAck;
+    public int lastSeqNo;
+   
+    public static class NodeStats {
+        /* MAC stats */
+        int sentBytes;
+        int beacon;
+        int data;
+        long lastReq;
+        double avgResponse;
+        
+        public String toString() {
+            return "Sent Bytes:" + sentBytes + " Beacon:" + beacon + " Data:" + data;
+        }
+    }
+    
+    public NodeStats getNodeStats(Node src) {
+        NodeStats stats = null;
+        if (src != null) {
+            stats = (NodeStats) src.properties.get("nodeStats");
+            if (stats == null) {
+                stats = new NodeStats();
+                src.properties.put("nodeStats", stats);
+            }
+        }
+        return stats;
+    }
+
+    
+    public long getElapsed() {
+        if (startTime == 0) {
+            startTime = System.currentTimeMillis();
+        }
+        return System.currentTimeMillis() - startTime;
+    }
+    
     public Node getNodeByMAC(byte[] mac) {
-        String addr = Packet.macToString(mac);
+        String addr = MacPacket.macToString(mac);
         Node node = nodeTable.get(addr);
         if (node == null) {
             node = new Node();
@@ -24,8 +62,12 @@ public class NodeTable {
     }
 
     public void print() {
-        for(Node node : nodeTable.values()) {
-            node.print();
+        for(String key : nodeTable.keySet()) {
+            Node node = nodeTable.get(key);
+            if (key.length() < 24) {
+                /* A MAC address - shorter then IPv6 address... */
+                node.print();                
+            }
         }
     }
 
