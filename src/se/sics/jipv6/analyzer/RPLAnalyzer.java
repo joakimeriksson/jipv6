@@ -18,10 +18,15 @@ public class RPLAnalyzer implements PacketAnalyzer {
         int DAO;
         int DAO_ACK;
         int rplRank;
+        byte[] parentAddr = null;
         
         public String toString() {
+            String parentStr = "-";
+            if (parentAddr != null) {
+                parentStr = IPv6Packet.addressToString(parentAddr);
+            }
             return "RPL Sent: ucDIO:" + ucDIO + " mcDIO:" + mcDIO + " ucDIS:" + ucDIO + " mcDIS:" + mcDIS +
-                    " DAO:" + DAO + " DAO_ACK:" + DAO_ACK + " Rank:" + (rplRank / 128.0);
+                    " DAO:" + DAO + " DAO_ACK:" + DAO_ACK + " Rank:" + (rplRank / 128.0) + " Parent: " + parentStr;
         }
     }
     
@@ -29,6 +34,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
     private int bcDISPacket;
     private int ucDISPacket;
     private int daoPacket;
+    
     
     private NodeTable nodeTable;
     
@@ -122,6 +128,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
                 rpl.printPacket(System.out);
                 if (stats != null) {
                     stats.DAO++;
+                    stats.parentAddr = packet.getDestinationAddress();
                 }
                 break;
             case RPLPacket.RPL_DAO_ACK:
