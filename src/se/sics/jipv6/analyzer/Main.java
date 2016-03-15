@@ -1,7 +1,9 @@
 package se.sics.jipv6.analyzer;
 import java.io.IOException;
 import java.net.UnknownHostException;
-
+import se.sics.jipv6.cli.CLI;
+import se.sics.jipv6.cli.StreamCLIContext;
+import se.sics.jipv6.cli.jline.ConsoleCLIContext;
 import se.sics.jipv6.pcap.PCAPPacket;
 import se.sics.jipv6.pcap.PCAPReader;
 import se.sics.jipv6.util.SerialRadioConnection;
@@ -101,6 +103,17 @@ public class Main {
         }
 
         JShark sniff = new JShark(analyzer);
+
+        CLI cli = new CLI();
+
+        if (false && "xterm".equalsIgnoreCase(System.getenv("TERM"))) {
+            // Special case - do not use jline2!
+            System.err.println("*** fallback to simple input");
+            new StreamCLIContext(cli, System.in, System.out, System.err, "jipv6> ");
+        } else {
+            new ConsoleCLIContext(cli, "jipv6> ");
+        }
+
         if (infile != null) {
             System.err.println("# Reading from pcap file " + infile);
             PCAPReader reader = new PCAPReader(infile);
@@ -130,7 +143,14 @@ public class Main {
             }
             reader.close();
             System.err.println("# [End of PCAP file]");
-            System.exit(0);
+//            System.exit(0);
+            for (;;) {
+                try {
+                    Thread.sleep(60000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         if (outfile != null) {
@@ -149,7 +169,15 @@ public class Main {
             }
         }
 
-        sniff.runCLI();
+//        sniff.runCLI();
+
+        for (;;) {
+            try {
+                Thread.sleep(60000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static PacketAnalyzer getAnalyzer(String analyzerClassName) {
