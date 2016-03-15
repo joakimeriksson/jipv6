@@ -129,11 +129,11 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                             sleepInfo.noPacket++;
                         }
                     }
-                    System.out.printf("[%s] Sleep Report - no packet recived Flag: %02x Dir:%s ",
+                    System.out.printf("[%s] Sleep Report - no packet received Flag: %02x Dir:%s ",
                             timeStr, flag, (flag & 0x80) > 0 ? "D" : "U");
 
                 } else if ((flag & 0xf) == 0x03) {
-                    System.out.printf("[%s] Sleep Report - packet recived Flag: %02x Dir:%s HoldTime: %d ",
+                    System.out.printf("[%s] Sleep Report - packet received Flag: %02x Dir:%s HoldTime: %d ",
                             timeStr, flag, (flag & 0x80) > 0 ? "D" : "U", time);
                     if (destNode != null) {
                         SleepStats sleepInfo = (SleepStats) destNode.properties.get("sleepInfo");

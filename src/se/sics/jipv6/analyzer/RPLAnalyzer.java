@@ -9,7 +9,7 @@ import se.sics.jipv6.pcap.CapturedPacket;
 
 public class RPLAnalyzer implements PacketAnalyzer {
 
-    class RPLStats {
+    static class RPLStats {
 
         int ucDIS;
         int mcDIS;

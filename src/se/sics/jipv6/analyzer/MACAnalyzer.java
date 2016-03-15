@@ -22,9 +22,12 @@ public class MACAnalyzer implements PacketAnalyzer {
     @Override
     public void print() {
         long elapsed = nodeTable.getElapsed();
+        // Use one second if less has elapsed
+        if (elapsed < 1000) {
+            elapsed = 1000;
+        }
         System.out.printf("MAC Analyzer: 802154: DATA:%d ACK:%d CMD:%d BEACON:%d bytes:%d bytes/sec:%d\n",
                 data, ack, cmd, beacon, bytes, bytes * 1000 / elapsed);
-        
     }
     
     @Override
@@ -60,10 +63,10 @@ public class MACAnalyzer implements PacketAnalyzer {
             ack++;
             if (nodeTable.printAck) {
                 if(packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO) == nodeTable.lastSeqNo) {
-                    System.out.println("ACKED");
+                    System.out.println(" ACKED");
                     nodeTable.printAck = false;
                 } else {
-                    System.out.print("Wrong ack: " + nodeTable.lastSeqNo + " <> " + packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO));
+                    System.out.print(" Wrong ack: " + nodeTable.lastSeqNo + " <> " + packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO));
                 }
             }
             break;
