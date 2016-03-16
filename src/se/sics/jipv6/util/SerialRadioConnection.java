@@ -76,15 +76,22 @@ public class SerialRadioConnection implements Runnable {
             if (DEBUG) {
                 System.out.println("Payload (len = " + payload.length + "): " + Utils.bytesToHexString(payload));
             }
-            if (payload.length < 2) {
+            if (payload.length < 3) {
                 // Ignore too short packets
                 return;
             }
-            if (payload[0] == '!' && payload[1] == 'h') {
-                // Sniffer data
-                if (listener != null) {
-                    payload = Arrays.copyOfRange(payload, 2, payload.length);
-                    listener.packetReceived(payload);
+            if (payload[0] == '!') {
+                switch (payload[1]) {
+                case 'h':
+                    // Sniffer data
+                    if (listener != null) {
+                        payload = Arrays.copyOfRange(payload, 2, payload.length);
+                        listener.packetReceived(payload);
+                    }
+                    break;
+                case 'C':
+                    System.out.println("Radio channel is " + (int)(payload[2] & 0xff));
+                    break;
                 }
             }
         } catch (ParseException e) {

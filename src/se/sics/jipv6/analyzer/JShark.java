@@ -306,7 +306,7 @@ public class JShark {
                                 data[1] = 'C';
                                 this.serialRadio.send(data);
                             } else {
-                                System.out.println("Unhandled set gommand: " + line);
+                                System.out.println("Unhandled get command: " + line);
                             }
                          } else {
                              System.out.println("Set needs parameter and value: " + line);
