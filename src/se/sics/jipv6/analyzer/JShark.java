@@ -45,7 +45,7 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
-import se.sics.jipv6.core.HC06Packeter;
+import se.sics.jipv6.core.IPHCPacketer;
 import se.sics.jipv6.core.HopByHopOption;
 import se.sics.jipv6.core.ICMP6Packet;
 import se.sics.jipv6.core.IPv6ExtensionHeader;
@@ -63,7 +63,7 @@ public class JShark {
 
     ArrayList<PacketAnalyzer> analyzers = new ArrayList<PacketAnalyzer>();
     IEEE802154Handler i154Handler;
-    HC06Packeter hc06Packeter;
+    IPHCPacketer iphcPacketer;
     SerialRadioConnection serialRadio;
 
     NodeTable nodeTable = new NodeTable();
@@ -74,8 +74,8 @@ public class JShark {
         analyzers.add(new RPLAnalyzer());
         analyzers.add(a);
         i154Handler = new IEEE802154Handler();
-        hc06Packeter = new HC06Packeter();
-        hc06Packeter.setContext(0, 0xaaaa0000, 0, 0, 0);
+        iphcPacketer = new IPHCPacketer();
+        iphcPacketer.setContext(0, 0xaaaa0000, 0, 0, 0);
         for (PacketAnalyzer analyzer : analyzers) {
             analyzer.init(nodeTable);
         }
@@ -157,7 +157,7 @@ public class JShark {
             IPv6Packet ipPacket = new IPv6Packet(packet);
             int dispatch = packet.getData(0);
             packet.setAttribute("6lowpan.dispatch", dispatch);
-            if (hc06Packeter.parsePacketData(ipPacket)) {
+            if (iphcPacketer.parsePacketData(ipPacket)) {
                 boolean more = true;
                 byte nextHeader = ipPacket.getNextHeader();
                 IPv6ExtensionHeader extHeader = null;

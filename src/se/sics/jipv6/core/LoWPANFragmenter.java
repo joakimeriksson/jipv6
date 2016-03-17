@@ -54,7 +54,7 @@ public class LoWPANFragmenter {
     public boolean handleFragment(IPv6Packet packet, int uncomprSize, int comprSize) {
         int data = packet.getData(0);
 
-        if ((data & 0xf8) == HC06Packeter.SICSLOWPAN_DISPATCH_FRAG1) {
+        if ((data & 0xf8) == IPHCPacketer.SICSLOWPAN_DISPATCH_FRAG1) {
             /* This is a first fragment */
             int fragSize = packet.get16(0) & 0x7ff;
             int fragTag = packet.get16(2);
@@ -78,7 +78,7 @@ public class LoWPANFragmenter {
             if (DEBUG) System.out.println("Received:" + ctx.receivedSize);
             /* Fragment 1 should never be "complete" since it would not be fragmentet then? */
             return false;
-        } else if ((data & 0xf8) == HC06Packeter.SICSLOWPAN_DISPATCH_FRAGN) {
+        } else if ((data & 0xf8) == IPHCPacketer.SICSLOWPAN_DISPATCH_FRAGN) {
             int fragSize = packet.get16(0) & 0x7ff;
             int fragTag = packet.get16(2);
             int fragOffset = packet.getData(4) * 8;

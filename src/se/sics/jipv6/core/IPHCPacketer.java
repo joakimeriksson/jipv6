@@ -1,6 +1,6 @@
 package se.sics.jipv6.core;
 
-public class HC06Packeter implements IPPacketer {
+public class IPHCPacketer implements IPPacketer {
 
     public final static int SICSLOWPAN_UDP_PORT_MIN                     = 0xF0B0;
     public final static int SICSLOWPAN_UDP_PORT_MAX                     = 0xF0BF;   /* F0B0 + 15 */
@@ -121,7 +121,7 @@ public class HC06Packeter implements IPPacketer {
         }
     }
 
-    /* HC06 specifies 16 contexts */
+    /* IPHC specifies 16 contexts */
     private AddrContext[] contexts = new AddrContext[16];
 
     public void setContext(int cIndex, long a1, long a2, long a3, long a4) {
@@ -140,7 +140,7 @@ public class HC06Packeter implements IPPacketer {
 
     public byte[] generatePacketData(IPv6Packet packet) {
         byte[] data = new byte[40 + 8];
-        int hc06_ptr = 2;
+        int iphc_ptr = 2;
 
         data[0] = SICSLOWPAN_DISPATCH_IPHC;
         data[1] = 0;
@@ -151,10 +151,10 @@ public class HC06Packeter implements IPPacketer {
            avoiding two lookups - or set the lookup values immediately */
         if(lookupContext(packet.destAddress) != -1 ||
                 lookupContext(packet.sourceAddress) != -1) {
-            /* set context flag and increase hc06_ptr */
+            /* set context flag and increase iphc_ptr */
             if (DEBUG) System.out.println("IPHC: compressing dest or src ipaddr - setting CID\n");
             data[1] |= SICSLOWPAN_IPHC_CID;
-            hc06_ptr++;
+            iphc_ptr++;
         }
 
         /*
@@ -164,7 +164,7 @@ public class HC06Packeter implements IPPacketer {
          * depends on the presence of version and flow label
          */
 
-        /* hc06 format of tc is ECN | DSCP , original is DSCP | ECN */
+        /* IPHC format of tc is ECN | DSCP , original is DSCP | ECN */
         int tmp = (packet.trafficClass << 6) & 0xff | (packet.trafficClass >> 2);
 
         if(packet.flowLabel == 0) {
@@ -175,26 +175,26 @@ public class HC06Packeter implements IPPacketer {
                 data[0] |= SICSLOWPAN_IPHC_TC_C;
             } else {
                 /* compress only the flow label */
-                data[hc06_ptr] = (byte) (tmp & 0xff);
-                hc06_ptr += 1;
+                data[iphc_ptr] = (byte) (tmp & 0xff);
+                iphc_ptr += 1;
             }
         } else {
             /* Flow label cannot be compressed - maybe check traffic class 0x3f */
             if((packet.trafficClass & 0x03) == 0) {
                 /* compress only traffic class */
                 data[0] |= SICSLOWPAN_IPHC_TC_C;
-                data[hc06_ptr] = (byte) ((tmp & 0xc0) | (packet.flowLabel >> 16) & 0x0f);
-                data[hc06_ptr + 1] = (byte) ((packet.flowLabel >> 8) & 0xff);
-                data[hc06_ptr + 2] = (byte) (packet.flowLabel & 0xff);
-                hc06_ptr += 3;
+                data[iphc_ptr] = (byte) ((tmp & 0xc0) | (packet.flowLabel >> 16) & 0x0f);
+                data[iphc_ptr + 1] = (byte) ((packet.flowLabel >> 8) & 0xff);
+                data[iphc_ptr + 2] = (byte) (packet.flowLabel & 0xff);
+                iphc_ptr += 3;
             } else {
                 /* compress nothing */
-                data[hc06_ptr] = (byte) tmp;
+                data[iphc_ptr] = (byte) tmp;
                 /* but replace the top byte with the new ECN | DSCP format*/
-                data[hc06_ptr + 1] = (byte) ((packet.flowLabel >> 16) & 0x0f);
-                data[hc06_ptr + 2] = (byte) ((packet.flowLabel >> 8) & 0xff);
-                data[hc06_ptr + 3] = (byte) (packet.flowLabel & 0xff);
-                hc06_ptr += 4;
+                data[iphc_ptr + 1] = (byte) ((packet.flowLabel >> 16) & 0x0f);
+                data[iphc_ptr + 2] = (byte) ((packet.flowLabel >> 8) & 0xff);
+                data[iphc_ptr + 3] = (byte) (packet.flowLabel & 0xff);
+                iphc_ptr += 4;
             }
         }
 
@@ -202,8 +202,8 @@ public class HC06Packeter implements IPPacketer {
         if(packet.nextHeader == PROTO_UDP) {
             data[0] |= SICSLOWPAN_IPHC_NH_C;
         } else {
-            data[hc06_ptr] = packet.nextHeader;
-            hc06_ptr += 1;
+            data[iphc_ptr] = packet.nextHeader;
+            iphc_ptr += 1;
         }
 
         /*
@@ -224,8 +224,8 @@ public class HC06Packeter implements IPPacketer {
             data[0] |= SICSLOWPAN_IPHC_TTL_255;
             break;
         default:
-            data[hc06_ptr] = (byte) packet.hopLimit;
-            hc06_ptr += 1;
+            data[iphc_ptr] = (byte) packet.hopLimit;
+            iphc_ptr += 1;
             break;
         }
 
@@ -249,37 +249,37 @@ public class HC06Packeter implements IPPacketer {
                 if(is16bitCompressable(packet.sourceAddress)){
                     /* compress IID to 16 bits */
                     data[1] |= SICSLOWPAN_IPHC_SAM_10; /* 16-bits */
-                    data[hc06_ptr++] = packet.sourceAddress[14];
-                    data[hc06_ptr++] = packet.sourceAddress[15];
+                    data[iphc_ptr++] = packet.sourceAddress[14];
+                    data[iphc_ptr++] = packet.sourceAddress[15];
                 } else {
                     /* do not compress IID */
                     data[1] |= SICSLOWPAN_IPHC_SAM_01; /* 64-bits */
-                    System.arraycopy(packet.sourceAddress, 8, data, hc06_ptr, 8);
-                    hc06_ptr += 8;
+                    System.arraycopy(packet.sourceAddress, 8, data, iphc_ptr, 8);
+                    iphc_ptr += 8;
                 }
             }
             /* No context found for this address */
         } else if(IPStack.isLinkLocal(packet.sourceAddress)) {
-            // TODO: make a function of this: compress_ll_hc06(&UIP_IP_BUF->srcipaddr);
+            // TODO: make a function of this: compress_ll_iphc(&UIP_IP_BUF->srcipaddr);
             if(packet.isSourceMACBased()){
                 data[1] |= SICSLOWPAN_IPHC_SAM_11; /* 0-bits */
             } else if(is16bitCompressable(packet.sourceAddress)){
                 /* compress IID to 16 bits fe80::XXXX */
                 data[1] |= SICSLOWPAN_IPHC_SAM_10; /* 16-bits */
-                data[hc06_ptr++] = packet.sourceAddress[14];
-                data[hc06_ptr++] = packet.sourceAddress[15];
-                hc06_ptr += 2;
+                data[iphc_ptr++] = packet.sourceAddress[14];
+                data[iphc_ptr++] = packet.sourceAddress[15];
+                iphc_ptr += 2;
             } else {
                 /* do not compress IID => fe80::IID */
                 data[1] |= SICSLOWPAN_IPHC_SAM_01; /* 64-bits */
-                System.arraycopy(packet.sourceAddress, 8, data, hc06_ptr, 8);
-                hc06_ptr += 8;
+                System.arraycopy(packet.sourceAddress, 8, data, iphc_ptr, 8);
+                iphc_ptr += 8;
             }
         } else {
             /* send the full address => SAC = 0, SAM = 00 */
             data[1] |= SICSLOWPAN_IPHC_SAM_00; /* 128-bits */
-            System.arraycopy(packet.sourceAddress, 0, data, hc06_ptr, 16);
-            hc06_ptr += 16;
+            System.arraycopy(packet.sourceAddress, 0, data, iphc_ptr, 16);
+            iphc_ptr += 16;
         }
 
         /* dest address*/
@@ -289,24 +289,24 @@ public class HC06Packeter implements IPPacketer {
             if(isMcastAddrCompressable8(packet.destAddress)) {
                 data[1] |= SICSLOWPAN_IPHC_DAM_11;
                 /* use last byte */
-                data[hc06_ptr++] = packet.destAddress[15];
+                data[iphc_ptr++] = packet.destAddress[15];
             } else if(isMcastAddrCompressable32(packet.destAddress)){
                 data[1] |= SICSLOWPAN_IPHC_DAM_10;
                 /* second byte + the last three */
-                data[hc06_ptr] = packet.destAddress[1];
-                System.arraycopy(packet.destAddress, 13, data, hc06_ptr + 1, 3);
-                hc06_ptr += 4;
+                data[iphc_ptr] = packet.destAddress[1];
+                System.arraycopy(packet.destAddress, 13, data, iphc_ptr + 1, 3);
+                iphc_ptr += 4;
             } else if(isMcastAddrCompressable48(packet.destAddress)){
                 data[1] |= SICSLOWPAN_IPHC_DAM_01;
                 /* second byte + the last five */
-                data[hc06_ptr] = packet.destAddress[1];
-                System.arraycopy(packet.destAddress, 11, data, hc06_ptr + 1, 5);
-                hc06_ptr += 6;
+                data[iphc_ptr] = packet.destAddress[1];
+                System.arraycopy(packet.destAddress, 11, data, iphc_ptr + 1, 5);
+                iphc_ptr += 6;
             } else {
                 data[1] |= SICSLOWPAN_IPHC_DAM_00;
                 /* full address */
-                System.arraycopy(packet.destAddress, 0, data, hc06_ptr + 1, 16);
-                hc06_ptr += 16;
+                System.arraycopy(packet.destAddress, 0, data, iphc_ptr + 1, 16);
+                iphc_ptr += 16;
             }
         } else {
             /* Address is unicast, try to compress */
@@ -322,36 +322,36 @@ public class HC06Packeter implements IPPacketer {
                     if(is16bitCompressable(packet.destAddress)) {
                         /* compress IID to 16 bits */
                         data[1] |= SICSLOWPAN_IPHC_DAM_10; /* 16-bits */
-                        data[hc06_ptr++] = packet.destAddress[14];
-                        data[hc06_ptr++] = packet.destAddress[15];
+                        data[iphc_ptr++] = packet.destAddress[14];
+                        data[iphc_ptr++] = packet.destAddress[15];
                     } else {
                         /* do not compress IID */
                         data[1] |= SICSLOWPAN_IPHC_DAM_01; /* 64-bits */
-                        System.arraycopy(packet.destAddress, 8, data, hc06_ptr, 8);
-                        hc06_ptr += 8;
+                        System.arraycopy(packet.destAddress, 8, data, iphc_ptr, 8);
+                        iphc_ptr += 8;
                     }
                 }
                 /* No context found for this address */
             } else if(IPStack.isLinkLocal(packet.destAddress)) {
-                // TODO: make a function of this: compress_ll_hc06(&UIP_IP_BUF->destipaddr);
+                // TODO: make a function of this: compress_ll_iphc(&UIP_IP_BUF->destipaddr);
                 if(packet.isDestinationMACBased()) {
                     data[1] |= SICSLOWPAN_IPHC_DAM_11; /* 0-bits */
                 } else if(is16bitCompressable(packet.destAddress)){
                     /* compress IID to 16 bits fe80::XXXX */
                     data[1] |= SICSLOWPAN_IPHC_DAM_10; /* 16-bits */
-                    data[hc06_ptr++] = packet.destAddress[14];
-                    data[hc06_ptr++] = packet.destAddress[15];
+                    data[iphc_ptr++] = packet.destAddress[14];
+                    data[iphc_ptr++] = packet.destAddress[15];
                 } else {
                     /* do not compress IID => fe80::IID */
                     data[1] |= SICSLOWPAN_IPHC_DAM_01; /* 64-bits */
-                    System.arraycopy(packet.destAddress, 8, data, hc06_ptr, 8);
-                    hc06_ptr += 8;
+                    System.arraycopy(packet.destAddress, 8, data, iphc_ptr, 8);
+                    iphc_ptr += 8;
                 }
             } else {
                 /* send the full address */
                 data[1] |= SICSLOWPAN_IPHC_DAM_00; /* 128-bits */
-                System.arraycopy(packet.destAddress, 0, data, hc06_ptr, 16);
-                hc06_ptr += 16;
+                System.arraycopy(packet.destAddress, 0, data, iphc_ptr, 16);
+                iphc_ptr += 16;
             }
         }
 
@@ -363,27 +363,27 @@ public class HC06Packeter implements IPPacketer {
                     udp.destinationPort >= SICSLOWPAN_UDP_PORT_MIN &&
                     udp.destinationPort <  SICSLOWPAN_UDP_PORT_MAX) {
                 /* we can compress. Copy compressed ports, full chcksum */
-                data[hc06_ptr++] = (byte) (((udp.sourcePort - SICSLOWPAN_UDP_PORT_MIN) << 4) +
+                data[iphc_ptr++] = (byte) (((udp.sourcePort - SICSLOWPAN_UDP_PORT_MIN) << 4) +
                         (udp.destinationPort - SICSLOWPAN_UDP_PORT_MIN));
                 int checksum = udp.doVirtualChecksum(packet);
-                data[hc06_ptr++] = (byte) (checksum >> 8);
-                data[hc06_ptr++] = (byte) (checksum & 0xff);
+                data[iphc_ptr++] = (byte) (checksum >> 8);
+                data[iphc_ptr++] = (byte) (checksum & 0xff);
             } else {
                 /* we cannot compress. Copy uncompressed ports, full chcksum */
-                data[hc06_ptr++] = (byte) (udp.sourcePort >> 8);
-                data[hc06_ptr++] = (byte) (udp.sourcePort & 0xff);
-                data[hc06_ptr++] = (byte) (udp.destinationPort >> 8);
-                data[hc06_ptr++] = (byte) (udp.destinationPort & 0xff);
+                data[iphc_ptr++] = (byte) (udp.sourcePort >> 8);
+                data[iphc_ptr++] = (byte) (udp.sourcePort & 0xff);
+                data[iphc_ptr++] = (byte) (udp.destinationPort >> 8);
+                data[iphc_ptr++] = (byte) (udp.destinationPort & 0xff);
                 int checksum = udp.doVirtualChecksum(packet);
-                data[hc06_ptr++] = (byte) (checksum >> 8);
-                data[hc06_ptr++] = (byte) (checksum & 0xff);
+                data[iphc_ptr++] = (byte) (checksum >> 8);
+                data[iphc_ptr++] = (byte) (checksum & 0xff);
             }
         }
 
 
-        if (DEBUG) System.out.println("HC06 Header compression: size " + hc06_ptr);
+        if (DEBUG) System.out.println("IPHC Header compression: size " + iphc_ptr);
         if (DEBUG) {
-            System.out.print("HC06: From ");
+            System.out.print("IPHC: From ");
             IPv6Packet.printAddress(System.out, packet.sourceAddress);
             System.out.print(" to ");
             IPv6Packet.printAddress(System.out, packet.destAddress);
@@ -398,11 +398,11 @@ public class HC06Packeter implements IPPacketer {
             IPPayload payload = packet.getIPPayload();
             pload = payload.generatePacketData(packet);
         }
-        if (DEBUG) System.out.println("HC06 Payload size: " + pload.length);
+        if (DEBUG) System.out.println("IPHC Payload size: " + pload.length);
 
-        byte[] dataPacket = new byte[hc06_ptr + pload.length];
-        System.arraycopy(data, 0, dataPacket, 0, hc06_ptr);
-        System.arraycopy(pload, 0, dataPacket, hc06_ptr, pload.length);
+        byte[] dataPacket = new byte[iphc_ptr + pload.length];
+        System.arraycopy(data, 0, dataPacket, 0, iphc_ptr);
+        System.arraycopy(pload, 0, dataPacket, iphc_ptr, pload.length);
         return dataPacket;
     }
 
@@ -443,7 +443,7 @@ public class HC06Packeter implements IPPacketer {
             dci = packet.getData(2) & 0x0f;
         }
 
-        int hc06_ptr = 2 + cid;
+        int iphc_ptr = 2 + cid;
 
         packet.version = 6;
         UDPPacket udp = null;
@@ -457,35 +457,35 @@ public class HC06Packeter implements IPPacketer {
             /* Flow label are carried inline */
             if((packet.getData(0) & SICSLOWPAN_IPHC_TC_C) == 0) {
                 /* Traffic class is carried inline */
-                packet.flowLabel = packet.get24(hc06_ptr + 1);
-                int tmp = packet.getData(hc06_ptr);
-                hc06_ptr += 4;
-                /* hc06 format of tc is ECN | DSCP , original is DSCP | ECN */
+                packet.flowLabel = packet.get24(iphc_ptr + 1);
+                int tmp = packet.getData(iphc_ptr);
+                iphc_ptr += 4;
+                /* IPHC format of tc is ECN | DSCP , original is DSCP | ECN */
                 packet.trafficClass = ((tmp >> 2) & 0x3f) | (tmp << 6) & (0x80 + 0x40);
                 /* ECN rolled down two steps + lowest DSCP bits at top two bits */
             } else {
                 /* highest flow label bits + ECN bits */
-                int tmp = packet.getData(hc06_ptr);
+                int tmp = packet.getData(iphc_ptr);
                 packet.trafficClass = (tmp >> 6) & 0x0f;
-                packet.flowLabel = packet.get16(hc06_ptr + 1);
-                hc06_ptr += 3;
+                packet.flowLabel = packet.get16(iphc_ptr + 1);
+                iphc_ptr += 3;
             }
         } else {
             /* Version is always 6! */
             /* Version and flow label are compressed */
             if((packet.getData(0) & SICSLOWPAN_IPHC_TC_C) == 0) {
                 /* Traffic class is inline */
-                packet.trafficClass =((packet.getData(hc06_ptr) >> 6) & 0x03);
-                packet.trafficClass = (packet.getData(hc06_ptr) << 2);
-                hc06_ptr += 1;
+                packet.trafficClass =((packet.getData(iphc_ptr) >> 6) & 0x03);
+                packet.trafficClass = (packet.getData(iphc_ptr) << 2);
+                iphc_ptr += 1;
             }
         }
 
         /* Next Header */
         if((packet.getData(0) & SICSLOWPAN_IPHC_NH_C) == 0) {
             /* Next header is carried inline */
-            packet.nextHeader = packet.getData(hc06_ptr);
-            hc06_ptr += 1;
+            packet.nextHeader = packet.getData(iphc_ptr);
+            iphc_ptr += 1;
         } else {
             if (DEBUG) System.out.println("Next header compressed!");
         }
@@ -502,8 +502,8 @@ public class HC06Packeter implements IPPacketer {
             packet.hopLimit = 255;
             break;
         case SICSLOWPAN_IPHC_TTL_I:
-            packet.hopLimit = packet.getData(hc06_ptr);
-            hc06_ptr += 1;
+            packet.hopLimit = packet.getData(iphc_ptr);
+            iphc_ptr += 1;
             break;
         }
 
@@ -525,15 +525,15 @@ public class HC06Packeter implements IPPacketer {
                 /* copy prefix from context */
                 System.arraycopy(context.prefix, 0, packet.sourceAddress, 0, 8);
                 /* copy IID from packet */
-                packet.copy(hc06_ptr, packet.sourceAddress, 8, 8);
-                hc06_ptr += 8;
+                packet.copy(iphc_ptr, packet.sourceAddress, 8, 8);
+                iphc_ptr += 8;
                 break;
             case SICSLOWPAN_IPHC_SAM_10: /* 16 bits */
                 /* unicast address */
                 System.arraycopy(context.prefix, 0, packet.sourceAddress, 0, 8);
                 /* copy 6 NULL bytes then 2 last bytes of IID */
-                packet.copy(hc06_ptr, packet.sourceAddress, 14, 2);
-                hc06_ptr += 2;
+                packet.copy(iphc_ptr, packet.sourceAddress, 14, 2);
+                iphc_ptr += 2;
                 break;
             case SICSLOWPAN_IPHC_SAM_11: /* 0-bits */
                 /* copy prefix from context */
@@ -551,21 +551,21 @@ public class HC06Packeter implements IPPacketer {
             switch(packet.getData(1) & SICSLOWPAN_IPHC_SAM_11) {
             case SICSLOWPAN_IPHC_SAM_00: /* 128 bits */
                 /* copy whole address from packet */
-                packet.copy(hc06_ptr, packet.sourceAddress, 0, 16);
-                hc06_ptr += 16;
+                packet.copy(iphc_ptr, packet.sourceAddress, 0, 16);
+                iphc_ptr += 16;
                 break;
             case SICSLOWPAN_IPHC_SAM_01: /* 64 bits */
                 packet.sourceAddress[0] = (byte) 0xfe;
                 packet.sourceAddress[1] = (byte) 0x80;
                 /* copy IID from packet */
-                packet.copy(hc06_ptr, packet.sourceAddress, 8, 8);
-                hc06_ptr += 8;
+                packet.copy(iphc_ptr, packet.sourceAddress, 8, 8);
+                iphc_ptr += 8;
                 break;
             case SICSLOWPAN_IPHC_SAM_10: /* 16 bits */
                 packet.sourceAddress[0] = (byte) 0xfe;
                 packet.sourceAddress[1] = (byte) 0x80;
-                packet.copy(hc06_ptr, packet.sourceAddress, 14, 2);
-                hc06_ptr += 2;
+                packet.copy(iphc_ptr, packet.sourceAddress, 14, 2);
+                iphc_ptr += 2;
                 break;
             case SICSLOWPAN_IPHC_SAM_11: /* 0 bits */
                 /* setup link-local address */
@@ -592,26 +592,26 @@ public class HC06Packeter implements IPPacketer {
                 switch (packet.getData(1) & SICSLOWPAN_IPHC_DAM_11) {
                 case SICSLOWPAN_IPHC_DAM_00: /* 128 bits */
                     /* copy whole address from packet */
-                    packet.copy(hc06_ptr, packet.destAddress, 0, 16);
-                    hc06_ptr += 16;
+                    packet.copy(iphc_ptr, packet.destAddress, 0, 16);
+                    iphc_ptr += 16;
                     break;
                 case SICSLOWPAN_IPHC_DAM_01: /* 48 bits FFXX::00XX:XXXX:XXXX */
                     packet.destAddress[0] = (byte) 0xff;
-                    packet.destAddress[1] = packet.getData(hc06_ptr);
-                    packet.copy(hc06_ptr + 1, packet.destAddress, 11, 5);
-                    hc06_ptr += 6;
+                    packet.destAddress[1] = packet.getData(iphc_ptr);
+                    packet.copy(iphc_ptr + 1, packet.destAddress, 11, 5);
+                    iphc_ptr += 6;
                     break;
                 case SICSLOWPAN_IPHC_DAM_10: /* 32 bits FFXX::00XX:XXXX */
                     packet.destAddress[0] = (byte) 0xff;
-                    packet.destAddress[1] = packet.getData(hc06_ptr);
-                    packet.copy(hc06_ptr + 1, packet.destAddress, 13, 3);
-                    hc06_ptr += 4;
+                    packet.destAddress[1] = packet.getData(iphc_ptr);
+                    packet.copy(iphc_ptr + 1, packet.destAddress, 13, 3);
+                    iphc_ptr += 4;
                     break;
                 case SICSLOWPAN_IPHC_DAM_11: /* 8 bits FF02::00XX */
                     packet.destAddress[0] = (byte) 0xff;
                     packet.destAddress[1] = (byte) 0x02;
-                    packet.destAddress[15] = packet.getData(hc06_ptr);
-                    hc06_ptr++;
+                    packet.destAddress[15] = packet.getData(iphc_ptr);
+                    iphc_ptr++;
                     break;
                 }
             }
@@ -625,15 +625,15 @@ public class HC06Packeter implements IPPacketer {
                 case SICSLOWPAN_IPHC_DAM_01: /* 64 bits */
                     System.arraycopy(context.prefix, 0, packet.destAddress, 0, 8);
                     /* copy IID from packet */
-                    packet.copy(hc06_ptr, packet.destAddress, 8, 8);
-                    hc06_ptr += 8;
+                    packet.copy(iphc_ptr, packet.destAddress, 8, 8);
+                    iphc_ptr += 8;
                     break;
                 case SICSLOWPAN_IPHC_DAM_10: /* 16 bits */
                     /* unicast address */
                     System.arraycopy(context.prefix, 0, packet.destAddress, 0, 8);
                     /* copy IID from packet */
-                    packet.copy(hc06_ptr, packet.destAddress, 14, 2);
-                    hc06_ptr += 2;
+                    packet.copy(iphc_ptr, packet.destAddress, 14, 2);
+                    iphc_ptr += 2;
                     break;
                 case SICSLOWPAN_IPHC_DAM_11: /* 0 bits */
                     /* unicast address */
@@ -649,20 +649,20 @@ public class HC06Packeter implements IPPacketer {
                 /* not context based => link local M = 0, DAC = 0 - same as SAC */
                 switch (packet.getData(1) & SICSLOWPAN_IPHC_DAM_11) {
                 case SICSLOWPAN_IPHC_DAM_00: /* 128 bits */
-                    packet.copy(hc06_ptr, packet.destAddress, 0, 16);
-                    hc06_ptr += 16;
+                    packet.copy(iphc_ptr, packet.destAddress, 0, 16);
+                    iphc_ptr += 16;
                     break;
                 case SICSLOWPAN_IPHC_DAM_01: /* 64 bits */
                     packet.destAddress[0] = (byte) 0xfe;
                     packet.destAddress[1] = (byte) 0x80;
-                    packet.copy(hc06_ptr, packet.destAddress, 8, 8);
-                    hc06_ptr += 8;
+                    packet.copy(iphc_ptr, packet.destAddress, 8, 8);
+                    iphc_ptr += 8;
                     break;
                 case SICSLOWPAN_IPHC_DAM_10: /* 16 bits */
                     packet.destAddress[0] = (byte) 0xfe;
                     packet.destAddress[1] = (byte) 0x80;
-                    packet.copy(hc06_ptr, packet.destAddress, 14, 2);
-                    hc06_ptr += 2;
+                    packet.copy(iphc_ptr, packet.destAddress, 14, 2);
+                    iphc_ptr += 2;
                     break;
                 case SICSLOWPAN_IPHC_DAM_11: /* 0 bits */
                     packet.destAddress[0] = (byte) 0xfe;
@@ -680,30 +680,30 @@ public class HC06Packeter implements IPPacketer {
         if((packet.getData(0) & SICSLOWPAN_IPHC_NH_C) != 0) {
             /* TODO: check if this is correct in hc-06 */
             /* The next header is compressed, NHC is following */
-            if((packet.getData(hc06_ptr) & SICSLOWPAN_NHC_UDP_MASK) == SICSLOWPAN_NHC_UDP_ID) {
+            if((packet.getData(iphc_ptr) & SICSLOWPAN_NHC_UDP_MASK) == SICSLOWPAN_NHC_UDP_ID) {
                 packet.nextHeader = PROTO_UDP;
-                boolean checksumCompressed = (packet.getData(hc06_ptr) & SICSLOWPAN_NHC_UDP_CHECKSUM_COMPR) != 0;
-                switch(packet.getData(hc06_ptr) & SICSLOWPAN_NHC_UDP_CS_P11) {
+                boolean checksumCompressed = (packet.getData(iphc_ptr) & SICSLOWPAN_NHC_UDP_CHECKSUM_COMPR) != 0;
+                switch(packet.getData(iphc_ptr) & SICSLOWPAN_NHC_UDP_CS_P11) {
                 case SICSLOWPAN_NHC_UDP_CS_P00:
                     /* 1 byte for NHC, 4 byte for ports */
-                    srcPort = packet.get16(hc06_ptr + 1);
-                    destPort = packet.get16(hc06_ptr + 3);
-                    hc06_ptr += 5;
+                    srcPort = packet.get16(iphc_ptr + 1);
+                    destPort = packet.get16(iphc_ptr + 3);
+                    iphc_ptr += 5;
                     break;
                     /* TODO: ADD P01 / P10 also!!!! */
                 case SICSLOWPAN_NHC_UDP_CS_P11:
                     /* 1 byte for NHC, 1 byte for ports */
-                    srcPort = SICSLOWPAN_UDP_PORT_MIN + (packet.getData(hc06_ptr + 1) >> 4);
-                    destPort = SICSLOWPAN_UDP_PORT_MIN + (packet.getData(hc06_ptr + 1) & 0x0F);
-                    hc06_ptr += 2;
+                    srcPort = SICSLOWPAN_UDP_PORT_MIN + (packet.getData(iphc_ptr + 1) >> 4);
+                    destPort = SICSLOWPAN_UDP_PORT_MIN + (packet.getData(iphc_ptr + 1) & 0x0F);
+                    iphc_ptr += 2;
                     break;
                 default:
                     System.out.println("sicslowpan uncompress_hdr: error unsupported UDP compression\n");
                 }
                 if (!checksumCompressed) {
-                    checkSum = ((packet.getData(hc06_ptr) & 0xff) << 8) +
-                            (packet.getData(hc06_ptr + 1) & 0xff);
-                    hc06_ptr += 2;
+                    checkSum = ((packet.getData(iphc_ptr) & 0xff) << 8) +
+                            (packet.getData(iphc_ptr + 1) & 0xff);
+                    iphc_ptr += 2;
                 }
 
                 udp = new UDPPacket();
@@ -712,7 +712,7 @@ public class HC06Packeter implements IPPacketer {
                 udp.checkSum = checkSum;
                 headerSize += 8;
             } else {
-                System.out.printf("Unsupported next header compression:%02x\n",(packet.getData(hc06_ptr) & 0xFC));
+                System.out.printf("Unsupported next header compression:%02x\n",(packet.getData(iphc_ptr) & 0xFC));
             }
         }
 
@@ -743,7 +743,7 @@ public class HC06Packeter implements IPPacketer {
             System.out.println();
         }
 
-        packet.incPos(hc06_ptr);
+        packet.incPos(iphc_ptr);
 
         if (udp != null) {
             /* if we have a udp payload we already have the udp headers in place */
