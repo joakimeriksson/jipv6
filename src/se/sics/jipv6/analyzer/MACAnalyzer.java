@@ -9,14 +9,14 @@ import se.sics.jipv6.pcap.CapturedPacket;
 public class MACAnalyzer implements PacketAnalyzer {
 
     NodeTable nodeTable;
-    
-     
+
+
     /* 802.15.4 stats */
     private int beacon;
     private int ack;
     private int data;
     private int cmd;
-    
+
     private long bytes;
 
     @Override
@@ -29,7 +29,7 @@ public class MACAnalyzer implements PacketAnalyzer {
         System.out.printf("MAC Analyzer: 802154: DATA:%d ACK:%d CMD:%d BEACON:%d bytes:%d bytes/sec:%d\n",
                 data, ack, cmd, beacon, bytes, bytes * 1000 / elapsed);
     }
-    
+
     @Override
     public void init(NodeTable table) {
         nodeTable = table;
@@ -51,7 +51,7 @@ public class MACAnalyzer implements PacketAnalyzer {
         if (stats != null) {
             stats.sentBytes += packet.getTotalLength() + 5 + 1 + 2;
         }
-        
+
         switch (type) {
         case IEEE802154Handler.BEACONFRAME:
             beacon++;

@@ -43,7 +43,7 @@ package se.sics.jipv6.http;
 public class HttpServlet {
 
     public void service(HttpServletRequest req,
-	    HttpServletResponse resp) {
+            HttpServletResponse resp) {
     }
 
 }

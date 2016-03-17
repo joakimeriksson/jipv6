@@ -15,7 +15,7 @@ public class LoWPANFragmenter {
         byte[] data;
         int firstFragmentOffset = 0;
         HashMap <String, String> map = new HashMap<String, String>();
-        
+
         FragmentContext(int tag, int size) {
             data = new byte[size];
             this.tag = tag;
@@ -46,11 +46,11 @@ public class LoWPANFragmenter {
             packet.setBytePayload(cleanedData);
         }
     }
-    
+
     private HashMap<String, FragmentContext> fragmentMap = new HashMap<String, FragmentContext>();
 
-    
-    
+
+
     public boolean handleFragment(IPv6Packet packet, int uncomprSize, int comprSize) {
         int data = packet.getData(0);
 
@@ -63,7 +63,7 @@ public class LoWPANFragmenter {
             /* Source and fragTag as indication of packet */
             if (DEBUG) System.out.printf("First Fragment found: size:%d tag:%d ID:%s\n", fragSize, fragTag, id);
             packet.incPos(4);
-            
+
             FragmentContext ctx = fragmentMap.get(id);
             if (ctx == null) {
                 ctx = new FragmentContext(fragTag, fragSize);
@@ -80,7 +80,7 @@ public class LoWPANFragmenter {
             return false;
         } else if ((data & 0xf8) == HC06Packeter.SICSLOWPAN_DISPATCH_FRAGN) {
             int fragSize = packet.get16(0) & 0x7ff;
-            int fragTag = packet.get16(2);    
+            int fragTag = packet.get16(2);
             int fragOffset = packet.getData(4) * 8;
             String id = packet.getLinkSourceAsString() + "-" + fragTag;
 
@@ -110,5 +110,5 @@ public class LoWPANFragmenter {
         }
         return true;
     }
-    
+
 }

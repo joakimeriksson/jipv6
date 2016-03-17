@@ -47,14 +47,14 @@ import se.sics.jipv6.core.TCPConnection;
 public class HttpServletResponse {
 
     private TCPConnection tcpConnection;
-    
+
     public HttpServletResponse(TCPConnection c) {
-	tcpConnection = c;
+        tcpConnection = c;
     }
-    
+
     public OutputStream getOutputStream() {
-	return tcpConnection.getOutputStream();
+        return tcpConnection.getOutputStream();
     }
-    
-    
+
+
 }

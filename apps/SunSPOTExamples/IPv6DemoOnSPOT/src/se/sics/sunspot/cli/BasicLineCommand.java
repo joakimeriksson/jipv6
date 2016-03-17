@@ -44,14 +44,13 @@ package se.sics.sunspot.cli;
  * @author joakim
  *
  */
-public abstract class BasicLineCommand extends BasicAsyncCommand implements
-    LineListener {
+public abstract class BasicLineCommand extends BasicAsyncCommand implements LineListener {
 
-  public BasicLineCommand(String cmdHelp, String argHelp) {
-    super(cmdHelp, argHelp);
-  }
+    public BasicLineCommand(String cmdHelp, String argHelp) {
+        super(cmdHelp, argHelp);
+    }
 
-  public void stopCommand(CommandContext context) {
-    context.exit(0);
-  }
+    public void stopCommand(CommandContext context) {
+        context.exit(0);
+    }
 }

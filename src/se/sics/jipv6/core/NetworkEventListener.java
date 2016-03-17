@@ -42,6 +42,6 @@ package se.sics.jipv6.core;
 
 public interface NetworkEventListener {
 
-  public void packetHandled(IPv6Packet packet);
-  
+    public void packetHandled(IPv6Packet packet);
+
 }

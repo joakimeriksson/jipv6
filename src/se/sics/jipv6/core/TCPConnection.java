@@ -208,7 +208,7 @@ public class TCPConnection {
     }
 
     synchronized void resend() {
-        TCPPacket tcpPacket; 
+        TCPPacket tcpPacket;
         if (state == FIN_WAIT_1 || state == FIN_WAIT_2) {
             /* FIN WAIT 2 should have received ack... but... */
             System.out.println("Resending FIN!!!!");
@@ -260,8 +260,8 @@ public class TCPConnection {
                 if (bufPos >= outgoingBuffer.length)
                     bufPos -= outgoingBuffer.length;
                 System.out.println("ACK for " + noAcked + " bytes. pos: " + bufPos +
-                        " nxtE:" + bufNextEmpty + " unack: " + Integer.toString(sentUnack & 0xffff, 16) + " sendNext: " 
-                        + Integer.toString(sendNext & 0xffff, 16) + " outSize: " + outSize() + 
+                        " nxtE:" + bufNextEmpty + " unack: " + Integer.toString(sentUnack & 0xffff, 16) + " sendNext: "
+                        + Integer.toString(sendNext & 0xffff, 16) + " outSize: " + outSize() +
                         " seqDiff: " + (sendNext - sentUnack) + " plen: " + plen);
                 notify();
                 /* this means that we can send more data !!*/
@@ -284,7 +284,7 @@ public class TCPConnection {
         if (tcpPacket.isFin()) {
             System.out.println("***** FIN RECEIVED!!!!!");
         }
-        
+
         if (receiveNext == tcpPacket.seqNo) {
             //System.out.println("TCPHandler: data received ok!!!");
             /* only ack if new data arrived! */
@@ -299,7 +299,7 @@ public class TCPConnection {
             }
 
             if (plen > 0) {
-                /* ack the new data! - this could be done from the connection itself!!*/	    
+                /* ack the new data! - this could be done from the connection itself!!*/
                 sendAck(tcpPacket);
 
                 if (tcpListener != null) {

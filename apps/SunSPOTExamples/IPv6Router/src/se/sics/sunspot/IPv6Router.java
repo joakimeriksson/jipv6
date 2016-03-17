@@ -1,9 +1,9 @@
 /*
  * Author: Joakim Eriksson, SICS
  * IPv6 router for the Sun SPOT
- * 
+ *
  * Will use some "binary" protocol for communication with a host app.?
- * 
+ *
  * Will handle HC01 compressed IPv6 packets over 6lowpan (802.15.4).
  */
 
@@ -29,7 +29,7 @@ import com.sun.spot.peripheral.radio.RadioPacket;
 import com.sun.spot.util.IEEEAddress;
 
 /**
- * 
+ *
  * @author: Joakim Eriksson
  */
 public class IPv6Router {
@@ -139,7 +139,7 @@ public class IPv6Router {
         byte[] macAddr = addrToByte(address.asLong());
 
         System.out.println("Starting IPv6Router application on " + address + " ...");
-        
+
         try {
             // Open up a broadcast connection to the host port
             // where the 'on Desktop' portion of this demo is listening
@@ -160,7 +160,7 @@ public class IPv6Router {
         ipStack.setLinkLayerAddress(macAddr);
         ipStack.setLinkLayerHandler(macHandler);
         ipStack.setRouter(true);
-        
+
         TSPClient tunnel = TSPClient.startTSPTunnel(ipStack, host, user, pwd);
         ipStack.setTunnel(tunnel);
 

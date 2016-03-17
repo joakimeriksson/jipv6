@@ -44,19 +44,19 @@ package se.sics.sunspot.cli;
 
 public abstract class BasicCommand extends Command {
 
-  private String argumentHelp;
-  private String commandHelp;
+    private String argumentHelp;
+    private String commandHelp;
 
-  public BasicCommand(String cmdHelp, String argHelp) {
-    commandHelp = cmdHelp;
-    argumentHelp = argHelp;
-  }
+    public BasicCommand(String cmdHelp, String argHelp) {
+        commandHelp = cmdHelp;
+        argumentHelp = argHelp;
+    }
 
-  public String getArgumentHelp(String commandName) {
-    return argumentHelp;
-  }
+    public String getArgumentHelp(String commandName) {
+        return argumentHelp;
+    }
 
-  public String getCommandHelp(String commandName) {
-    return commandHelp;
-  }
+    public String getCommandHelp(String commandName) {
+        return commandHelp;
+    }
 }

@@ -11,7 +11,7 @@ public class NodeTable {
 
     public boolean printAck;
     public int lastSeqNo;
-   
+
     public static class NodeStats {
         /* MAC stats */
         int sentBytes;
@@ -19,12 +19,12 @@ public class NodeTable {
         int data;
         long lastReq;
         double avgResponse;
-        
+
         public String toString() {
             return "Sent Bytes:" + sentBytes + " Beacon:" + beacon + " Data:" + data;
         }
     }
-    
+
     public NodeStats getNodeStats(Node src) {
         NodeStats stats = null;
         if (src != null) {
@@ -37,14 +37,14 @@ public class NodeTable {
         return stats;
     }
 
-    
+
     public long getElapsed() {
         if (startTime == 0) {
             startTime = System.currentTimeMillis();
         }
         return System.currentTimeMillis() - startTime;
     }
-    
+
     public Node getNodeByMAC(byte[] mac) {
         String addr = MacPacket.macToString(mac);
         Node node = nodeTable.get(addr);
@@ -55,7 +55,7 @@ public class NodeTable {
         }
         return node;
     }
-    
+
     public Node getNodeByIP(byte[] address) {
         String addr = IPv6Packet.addressToString(address);
         return nodeTable.get(addr);
@@ -66,7 +66,7 @@ public class NodeTable {
             Node node = nodeTable.get(key);
             if (key.length() < 24) {
                 /* A MAC address - shorter then IPv6 address... */
-                node.print();                
+                node.print();
             }
         }
     }
@@ -78,5 +78,5 @@ public class NodeTable {
             node.ipAddresses.add(addrStr);
         }
     }
-    
+
 }

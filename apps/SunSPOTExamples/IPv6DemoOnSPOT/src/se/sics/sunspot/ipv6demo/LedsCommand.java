@@ -49,37 +49,37 @@ import se.sics.sunspot.cli.CommandContext;
  */
 public class LedsCommand extends BasicCommand {
 
-  private final ITriColorLED[] leds = EDemoBoard.getInstance().getLEDs();
+    private final ITriColorLED[] leds = EDemoBoard.getInstance().getLEDs();
 
-  public LedsCommand() {
-    super("set the leds", "[led] [RGB]");
-  }
-
-  public int executeCommand(CommandContext context) {
-    if(context.getArgumentCount() == 0) {
-      context.out.println("LEDS:");
-      for (int i = 0, n = leds.length; i < n; i++) {
-        context.out.println(" " + (i + 1) + ": " + leds[i].getRed() + "," +
-            leds[i].getGreen() + "," + leds[i].getBlue() + " " + (leds[i].isOn() ? "on" : "off"));
-      }
-    } else {
-      int index = context.getArgumentAsInt(0);
-      int color = 0;
-      if (context.getArgumentCount() > 1) {
-        color = context.getArgumentAsInt(1);
-      }
-      for (int i = 0, n = leds.length; i < n; i++) {
-        if ((index & (1 << i)) != 0) {
-          if (color <= 0) {
-            leds[i].setOff();
-          } else {
-            leds[i].setRGB((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
-            leds[i].setOn();
-          }
-        }
-      }
+    public LedsCommand() {
+        super("set the leds", "[led] [RGB]");
     }
-    return 0;
-  }
+
+    public int executeCommand(CommandContext context) {
+        if(context.getArgumentCount() == 0) {
+            context.out.println("LEDS:");
+            for (int i = 0, n = leds.length; i < n; i++) {
+                context.out.println(" " + (i + 1) + ": " + leds[i].getRed() + "," +
+                        leds[i].getGreen() + "," + leds[i].getBlue() + " " + (leds[i].isOn() ? "on" : "off"));
+            }
+        } else {
+            int index = context.getArgumentAsInt(0);
+            int color = 0;
+            if (context.getArgumentCount() > 1) {
+                color = context.getArgumentAsInt(1);
+            }
+            for (int i = 0, n = leds.length; i < n; i++) {
+                if ((index & (1 << i)) != 0) {
+                    if (color <= 0) {
+                        leds[i].setOff();
+                    } else {
+                        leds[i].setRGB((color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff);
+                        leds[i].setOn();
+                    }
+                }
+            }
+        }
+        return 0;
+    }
 
 }

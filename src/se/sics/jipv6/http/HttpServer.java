@@ -55,81 +55,81 @@ import se.sics.jipv6.core.TCPPacket;
 public class HttpServer implements TCPListener, Runnable{
 
     private IPStack ipStack;
-    private TCPConnection serverConnection;    
+    private TCPConnection serverConnection;
     private Hashtable<String, HttpServlet> servlets = new Hashtable<String, HttpServlet>();
     private Vector<TCPConnection> pending = new Vector<TCPConnection>();
     private String status = "";
-    
+
     public HttpServer(IPStack stack) {
-	ipStack = stack;
-	serverConnection = ipStack.listen(80);
-	serverConnection.setTCPListener(this);
-	new Thread(this).start();
+        ipStack = stack;
+        serverConnection = ipStack.listen(80);
+        serverConnection.setTCPListener(this);
+        new Thread(this).start();
     }
 
     public void connectionClosed(TCPConnection connection) {
     }
 
     public void newConnection(TCPConnection connection) {
-	handleConnection(connection);
+        handleConnection(connection);
     }
 
     public void tcpDataReceived(TCPConnection source, TCPPacket packet) {
     }
-    
+
     public void registerServlet(String path, HttpServlet servlet) {
-	servlets.put(path, servlet);
+        servlets.put(path, servlet);
     }
-    
+
     private synchronized void handleConnection(TCPConnection connection) {
-	/* add and notify worker thread */
-	System.out.println("%%% HttpServer: gotten new connection, adding to pending...");
-	pending.addElement(connection);
-	notify();
+        /* add and notify worker thread */
+        System.out.println("%%% HttpServer: gotten new connection, adding to pending...");
+        pending.addElement(connection);
+        notify();
     }
-    
+
     private void handlePendingConnections() {
-	while(true) {
-	    TCPConnection connection = null;
-	    synchronized(this) {
-		while(pending.size() == 0)
-		    try {
-			System.out.println("%%% HttpServer: worker waiting...");
-			status = "waiting for connections";
-			wait();
-			/* take first and handle... */
-			System.out.println("%%% HttpServer: worker notified...");
-		    } catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		    }
-		    status = "got connection";
-		    connection = pending.firstElement();
-		    pending.removeElementAt(0);
-	    }
-	    InputStream input = connection.getInputStream();
-	    OutputStream output = connection.getOutputStream();
-	    connection.setTimeout(5000);
-	    try {
-		/* read a line */
-		System.out.println("%%% HttpServer: reading req line from: " + input);
-		status = "reading request line";
-		String reqLine = readLine(input);
-		reqLine = reqLine.trim();
-		if (!handleRequest(reqLine, input, output, connection)) {
-		    output.write("HTTP/1.0 404 NOT FOUND\r\n\r\n".getBytes());
-		}
-	    } catch (Exception e) {
-		e.printStackTrace();
-	    } finally {
-		try {
-		    output.close();
-		    input.close();
-		} catch (IOException e) {
-		}
-		connection.close();
-	    }
-	}
+        while(true) {
+            TCPConnection connection = null;
+            synchronized(this) {
+                while(pending.size() == 0)
+                    try {
+                        System.out.println("%%% HttpServer: worker waiting...");
+                        status = "waiting for connections";
+                        wait();
+                        /* take first and handle... */
+                        System.out.println("%%% HttpServer: worker notified...");
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                status = "got connection";
+                connection = pending.firstElement();
+                pending.removeElementAt(0);
+            }
+            InputStream input = connection.getInputStream();
+            OutputStream output = connection.getOutputStream();
+            connection.setTimeout(5000);
+            try {
+                /* read a line */
+                System.out.println("%%% HttpServer: reading req line from: " + input);
+                status = "reading request line";
+                String reqLine = readLine(input);
+                reqLine = reqLine.trim();
+                if (!handleRequest(reqLine, input, output, connection)) {
+                    output.write("HTTP/1.0 404 NOT FOUND\r\n\r\n".getBytes());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    output.close();
+                    input.close();
+                } catch (IOException e) {
+                }
+                connection.close();
+            }
+        }
     }
 
     private boolean handleRequest(String reqLine, InputStream input,
@@ -147,8 +147,8 @@ public class HttpServer implements TCPListener, Runnable{
             status = "finding servlet: " + path;
             HttpServlet servlet = servlets.get(path);
             if (servlet != null) {
-                // ignore headers for speed...			
-                //			
+                // ignore headers for speed...
+                //
                 //		    String line = null;
                 //		    while((line = readLine(input)) != null) {
                 //			line = line.trim();
@@ -166,22 +166,22 @@ public class HttpServer implements TCPListener, Runnable{
         }
         return false;
     }
-    
+
     public void run() {
-	System.out.println("%%% HttpServer: worker thread started...");
-	handlePendingConnections();
+        System.out.println("%%% HttpServer: worker thread started...");
+        handlePendingConnections();
     }
 
     private String readLine(InputStream input) throws IOException {
-	StringBuffer sb = new StringBuffer();
-	int c;
-	while(((c = input.read()) != -1)) {
-	    if (c != '\r') sb.append((char) c);
-	    if (c == '\n') return sb.toString();
-	}
-	return null;
+        StringBuffer sb = new StringBuffer();
+        int c;
+        while(((c = input.read()) != -1)) {
+            if (c != '\r') sb.append((char) c);
+            if (c == '\n') return sb.toString();
+        }
+        return null;
     }
-    
+
     public void printStatus(PrintStream out) {
         out.println("HttpServer status: " + status);
     }

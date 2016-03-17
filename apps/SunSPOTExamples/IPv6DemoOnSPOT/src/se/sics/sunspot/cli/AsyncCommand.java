@@ -46,5 +46,5 @@ package se.sics.sunspot.cli;
  *
  */
 public interface AsyncCommand {
-  public void stopCommand(CommandContext context);
+    public void stopCommand(CommandContext context);
 }

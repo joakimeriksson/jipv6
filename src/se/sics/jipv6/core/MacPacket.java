@@ -43,252 +43,252 @@ import java.util.Hashtable;
 
 public class MacPacket {
 
-  public static final String LL_SOURCE = "link.source";
-  public static final String LL_DESTINATION = "link.destination";
-  
-  protected Hashtable<String, Object> attributes = new Hashtable<String, Object>();
+    public static final String LL_SOURCE = "link.source";
+    public static final String LL_DESTINATION = "link.destination";
 
-  private final long timeMillis;
+    protected Hashtable<String, Object> attributes = new Hashtable<String, Object>();
 
-  /* this is the packet data array */
-  protected byte[] packetData;
-  /* current position of packet data cursor */
-  int currentPos = 0;
+    private final long timeMillis;
 
-  public MacPacket(long time) {
-      this.timeMillis = time;
-  }
+    /* this is the packet data array */
+    protected byte[] packetData;
+    /* current position of packet data cursor */
+    int currentPos = 0;
 
-  public long getTimeMillis() {
-      return timeMillis;
-  }
-
-  public int getPos() {
-      return currentPos;
-  }
-  
-  public void setBytes(byte[] data) {
-    packetData = data;
-    currentPos = 0;
-  }
-  
-  public void setBytes(byte[] data, int startPos, int len) {
-    byte[] payload = new byte[len];
-    System.arraycopy(data, startPos, payload, 0, len);
-    packetData = payload;
-    /* reset cursor in this case !!! */
-    currentPos = 0;
-  }
-
-  /* This will replace any data after the specific position with the data array */
-  public void setBytePayload(byte[] data) {
-      byte[] newData = new byte[data.length + currentPos];
-      System.arraycopy(packetData, 0, newData, 0, currentPos);
-      System.arraycopy(data, 0, newData, currentPos, data.length);
-      packetData = newData;
-  }
-  
-  public void appendBytes(byte[] data) {
-    if (packetData == null) {
-      packetData = data;
-    } else {
-      setPacketData(packetData, data);
+    public MacPacket(long time) {
+        this.timeMillis = time;
     }
-  }
-  
-  public void prependBytes(byte[] data) {
-    if (packetData == null) {
-      packetData = data;
-    } else {
-      setPacketData(data, packetData);
+
+    public long getTimeMillis() {
+        return timeMillis;
     }
-  }
-  
-  private void setPacketData(byte[] data1, byte[] data2) {
-    byte[] newData = new byte[data1.length + data2.length];
-    System.arraycopy(data1, 0, newData, 0, data1.length);
-    System.arraycopy(data2, 0, newData, data1.length, data2.length);
-    packetData = newData;
-  }
-  
-  public byte[] getBytes() {
-    return packetData;
-  }
 
-  /* total packet length */
-  public int getTotalLength() {
-    return packetData.length;
-  }
-  
-  /* called when headers are parsed to get current payload lenght 
-   * only useful when parsing messages... */
-  public int getPayloadLength() {
-    return packetData.length - currentPos;
-  }
-  
-  public void setAttribute(String name, Object object) {
-    attributes.put(name, object);
-  }
-
-  public void setAttribute(String name, int data) {
-    attributes.put(name, new Integer(data));
-  }
-  
-  public Object getAttribute(String name) {
-    return attributes.get(name);
-  }
-
-  public static String addressToString(byte[] addr) {
-      StringBuilder addrStr = new StringBuilder();
-      for(int i = 0; i < addr.length; i++) {
-          if (i > 0) {
-              addrStr.append(':');
-          }
-          addrStr.append(String.format("%02x", addr[i] & 0xff));
-      }
-      return addrStr.toString();
-  }
-  
-  public byte[] getLinkSource() {
-    return (byte[]) attributes.get(LL_SOURCE);
-  }
-  
-  public String getLinkSourceAsString() {
-      return addressToString(getLinkSource());
-  }
-
-  public byte[] getLinkDestination() {
-    return (byte[]) attributes.get(LL_DESTINATION);
-  }
-
-  public String getLinkDestinationAsString() {
-      return addressToString(getLinkDestination());
-  }
-
-  
-  public int get32(int pos) {
-    pos = currentPos + pos;
-    if (packetData.length >= pos + 3) {
-    return ((packetData[pos] & 0xff) << 24) |
-    ((packetData[pos + 1] & 0xff) << 16) |
-    ((packetData[pos + 2] & 0xff) << 8) |
-    (packetData[pos + 3] & 0xff);
+    public int getPos() {
+        return currentPos;
     }
-    return 0;
-  }
 
-  public int get24(int pos) {
-      pos = currentPos + pos;
-      if (packetData.length >= pos + 2) {
-          return ((packetData[pos] & 0xff) << 16) |
-          ((packetData[pos + 1] & 0xff) << 8) |
-          (packetData[pos + 2] & 0xff);
-      }
-      return 0;
-  }
-
-  
-  static int get32(byte[] data, int pos) {
-    if (data.length >= pos + 3) {
-    return ((data[pos] & 0xff) << 24) |
-    ((data[pos + 1] & 0xff) << 16) |
-    ((data[pos + 2] & 0xff) << 8) |
-    (data[pos + 3] & 0xff);
+    public void setBytes(byte[] data) {
+        packetData = data;
+        currentPos = 0;
     }
-    return 0;
-  }
 
-  static int get16(byte[] data, int pos) {
-    if (data.length >= pos + 1) {
-    return ((data[pos] & 0xff) << 8) |
-    ((data[pos + 1] & 0xff) << 0);
+    public void setBytes(byte[] data, int startPos, int len) {
+        byte[] payload = new byte[len];
+        System.arraycopy(data, startPos, payload, 0, len);
+        packetData = payload;
+        /* reset cursor in this case !!! */
+        currentPos = 0;
     }
-    return 0;
-  }
 
-  
-  public int get16(int pos) {
-    pos = currentPos + pos;
-    if (packetData.length > pos + 1)
-      return ((packetData[pos] & 0xff) << 8) | packetData[pos + 1] & 0xff;
-    return 0;
-  }
-
-  public byte getData(int pos) {
-    return packetData[currentPos + pos];
-  }
-  
-  public void incPos(int delta) {
-    currentPos += delta;
-  }
-
-  public byte[] getPayload() {
-    // payload is from pos to end...
-    byte[] payload = new byte[packetData.length - currentPos];
-    System.arraycopy(packetData, currentPos, payload, 0, payload.length);
-    return payload;
-  }
-  
-  public int getAttributeAsInt(String attr) {
-    Object val = attributes.get(attr);
-    if (val instanceof Integer) return ((Integer)val).intValue();
-    if (val instanceof String) return Integer.parseInt((String) val);
-    return -1;
-  }
-
-  /* copies bytes from currentPos + pos to the given array */
-  public void copy(int pos, byte[] dst, int dstPos, int len) {
-    int tPos = pos + currentPos;
-    if (tPos + len > packetData.length) {
-        System.out.println("Trying to copy data from " + pos + " " + currentPos + " of " + len + " len (totSize: " + packetData.length + ")");
+    /* This will replace any data after the specific position with the data array */
+    public void setBytePayload(byte[] data) {
+        byte[] newData = new byte[data.length + currentPos];
+        System.arraycopy(packetData, 0, newData, 0, currentPos);
+        System.arraycopy(data, 0, newData, currentPos, data.length);
+        packetData = newData;
     }
-    if (len + dstPos > dst.length) {
-        System.out.println("Trying to copy data to " + dstPos + " of " + len + " len (totSize: " + dst.length + ")");
+
+    public void appendBytes(byte[] data) {
+        if (packetData == null) {
+            packetData = data;
+        } else {
+            setPacketData(packetData, data);
+        }
     }
-    System.arraycopy(packetData, tPos, dst, dstPos, len);
-  }
 
-  /* copies bytes from currentPos + pos to the given array full length */
-  public void copy(int pos, byte[] dst, int dstPos) {
-    int len = getPayloadLength()  - pos;
-    copy(pos, dst, dstPos, len);
-  }
+    public void prependBytes(byte[] data) {
+        if (packetData == null) {
+            packetData = data;
+        } else {
+            setPacketData(data, packetData);
+        }
+    }
 
-  
-  public void setData(int pos, byte val) {
-    packetData[currentPos + pos] = val;
-  }
-  
-  public void printPayload() {
-      for(int i = currentPos; i < packetData.length; i++) {
-          System.out.printf("%02x", packetData[i] & 0xff);
-      }
-      System.out.println();
-  }
-  
-  public static String macToString(byte[] addr) {
-      StringBuilder str = new StringBuilder();
-      for(int i = 0; i < addr.length; i++) {
-          if(i > 0) str.append(':');
-          str.append(String.format("%02x", addr[i]));
-      }
-      return str.toString();
-  }
-  
-  public void printPacket() {
-      for (String key : attributes.keySet().toArray(new String[0])) {
-          Object value = attributes.get(key);
-          if(key.equals(LL_SOURCE) || key.equals(LL_DESTINATION)) {
-              byte[] addr = (byte[]) value;
-              System.out.print(key + " = ");
-              for(int i = 0; i < addr.length; i++) {
-                  if(i > 0) System.out.print(":");
-                  System.out.printf("%02x", addr[i]);
-              }
-              System.out.println();
-          } else {
-              System.out.println(key + " = " + value);
-          }
-      }
-  }
+    private void setPacketData(byte[] data1, byte[] data2) {
+        byte[] newData = new byte[data1.length + data2.length];
+        System.arraycopy(data1, 0, newData, 0, data1.length);
+        System.arraycopy(data2, 0, newData, data1.length, data2.length);
+        packetData = newData;
+    }
+
+    public byte[] getBytes() {
+        return packetData;
+    }
+
+    /* total packet length */
+    public int getTotalLength() {
+        return packetData.length;
+    }
+
+    /* called when headers are parsed to get current payload lenght
+     * only useful when parsing messages... */
+    public int getPayloadLength() {
+        return packetData.length - currentPos;
+    }
+
+    public void setAttribute(String name, Object object) {
+        attributes.put(name, object);
+    }
+
+    public void setAttribute(String name, int data) {
+        attributes.put(name, new Integer(data));
+    }
+
+    public Object getAttribute(String name) {
+        return attributes.get(name);
+    }
+
+    public static String addressToString(byte[] addr) {
+        StringBuilder addrStr = new StringBuilder();
+        for(int i = 0; i < addr.length; i++) {
+            if (i > 0) {
+                addrStr.append(':');
+            }
+            addrStr.append(String.format("%02x", addr[i] & 0xff));
+        }
+        return addrStr.toString();
+    }
+
+    public byte[] getLinkSource() {
+        return (byte[]) attributes.get(LL_SOURCE);
+    }
+
+    public String getLinkSourceAsString() {
+        return addressToString(getLinkSource());
+    }
+
+    public byte[] getLinkDestination() {
+        return (byte[]) attributes.get(LL_DESTINATION);
+    }
+
+    public String getLinkDestinationAsString() {
+        return addressToString(getLinkDestination());
+    }
+
+
+    public int get32(int pos) {
+        pos = currentPos + pos;
+        if (packetData.length >= pos + 3) {
+            return ((packetData[pos] & 0xff) << 24) |
+                    ((packetData[pos + 1] & 0xff) << 16) |
+                    ((packetData[pos + 2] & 0xff) << 8) |
+                    (packetData[pos + 3] & 0xff);
+        }
+        return 0;
+    }
+
+    public int get24(int pos) {
+        pos = currentPos + pos;
+        if (packetData.length >= pos + 2) {
+            return ((packetData[pos] & 0xff) << 16) |
+                    ((packetData[pos + 1] & 0xff) << 8) |
+                    (packetData[pos + 2] & 0xff);
+        }
+        return 0;
+    }
+
+
+    static int get32(byte[] data, int pos) {
+        if (data.length >= pos + 3) {
+            return ((data[pos] & 0xff) << 24) |
+                    ((data[pos + 1] & 0xff) << 16) |
+                    ((data[pos + 2] & 0xff) << 8) |
+                    (data[pos + 3] & 0xff);
+        }
+        return 0;
+    }
+
+    static int get16(byte[] data, int pos) {
+        if (data.length >= pos + 1) {
+            return ((data[pos] & 0xff) << 8) |
+                    ((data[pos + 1] & 0xff) << 0);
+        }
+        return 0;
+    }
+
+
+    public int get16(int pos) {
+        pos = currentPos + pos;
+        if (packetData.length > pos + 1)
+            return ((packetData[pos] & 0xff) << 8) | packetData[pos + 1] & 0xff;
+        return 0;
+    }
+
+    public byte getData(int pos) {
+        return packetData[currentPos + pos];
+    }
+
+    public void incPos(int delta) {
+        currentPos += delta;
+    }
+
+    public byte[] getPayload() {
+        // payload is from pos to end...
+        byte[] payload = new byte[packetData.length - currentPos];
+        System.arraycopy(packetData, currentPos, payload, 0, payload.length);
+        return payload;
+    }
+
+    public int getAttributeAsInt(String attr) {
+        Object val = attributes.get(attr);
+        if (val instanceof Integer) return ((Integer)val).intValue();
+        if (val instanceof String) return Integer.parseInt((String) val);
+        return -1;
+    }
+
+    /* copies bytes from currentPos + pos to the given array */
+    public void copy(int pos, byte[] dst, int dstPos, int len) {
+        int tPos = pos + currentPos;
+        if (tPos + len > packetData.length) {
+            System.out.println("Trying to copy data from " + pos + " " + currentPos + " of " + len + " len (totSize: " + packetData.length + ")");
+        }
+        if (len + dstPos > dst.length) {
+            System.out.println("Trying to copy data to " + dstPos + " of " + len + " len (totSize: " + dst.length + ")");
+        }
+        System.arraycopy(packetData, tPos, dst, dstPos, len);
+    }
+
+    /* copies bytes from currentPos + pos to the given array full length */
+    public void copy(int pos, byte[] dst, int dstPos) {
+        int len = getPayloadLength()  - pos;
+        copy(pos, dst, dstPos, len);
+    }
+
+
+    public void setData(int pos, byte val) {
+        packetData[currentPos + pos] = val;
+    }
+
+    public void printPayload() {
+        for(int i = currentPos; i < packetData.length; i++) {
+            System.out.printf("%02x", packetData[i] & 0xff);
+        }
+        System.out.println();
+    }
+
+    public static String macToString(byte[] addr) {
+        StringBuilder str = new StringBuilder();
+        for(int i = 0; i < addr.length; i++) {
+            if(i > 0) str.append(':');
+            str.append(String.format("%02x", addr[i]));
+        }
+        return str.toString();
+    }
+
+    public void printPacket() {
+        for (String key : attributes.keySet().toArray(new String[0])) {
+            Object value = attributes.get(key);
+            if(key.equals(LL_SOURCE) || key.equals(LL_DESTINATION)) {
+                byte[] addr = (byte[]) value;
+                System.out.print(key + " = ");
+                for(int i = 0; i < addr.length; i++) {
+                    if(i > 0) System.out.print(":");
+                    System.out.printf("%02x", addr[i]);
+                }
+                System.out.println();
+            } else {
+                System.out.println(key + " = " + value);
+            }
+        }
+    }
 }

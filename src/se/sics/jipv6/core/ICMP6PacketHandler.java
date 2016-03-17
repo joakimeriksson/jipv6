@@ -43,93 +43,93 @@ import se.sics.jipv6.util.Utils;
 
 public class ICMP6PacketHandler {
 
-  public static final boolean DEBUG = false;
-    
-  IPStack ipStack;
-  private ICMP6Listener listener = null;
-  
-  public ICMP6PacketHandler(IPStack stack) {
-    ipStack = stack;
-  }
+    public static final boolean DEBUG = false;
 
-  public void setICMP6Listener(ICMP6Listener l) {
-      listener = l;
-  }
-  
-  public void handlePacket(IPv6Packet packet) {
-    ICMP6Packet icmpPacket = new ICMP6Packet();
-    icmpPacket.parsePacketData(packet);
-    packet.setIPPayload(icmpPacket);
+    IPStack ipStack;
+    private ICMP6Listener listener = null;
 
-    if (DEBUG) icmpPacket.printPacket(System.out);
-
-    if (listener != null) {
-        if (listener.ICMP6PacketReceived(packet))
-            return;
+    public ICMP6PacketHandler(IPStack stack) {
+        ipStack = stack;
     }
-    
-    /* handle packet - just a test for now */
-    ICMP6Packet p;
-    IPv6Packet ipp;
-    switch (icmpPacket.type) {
-    case ICMP6Packet.ECHO_REQUEST:
-      p = new ICMP6Packet();
-      p.type = ICMP6Packet.ECHO_REPLY;
-      p.seqNo = icmpPacket.seqNo;
-      p.id = icmpPacket.id;
-      p.echoData = icmpPacket.echoData;
-      ipp = new IPv6Packet();
-      ipp.setIPPayload(p);
-      // is this ok?
-      ipp.destAddress = packet.sourceAddress;
-      ipp.sourceAddress = ipStack.myIPAddress;
-      
-      ipStack.sendPacket(ipp, packet.netInterface);
-      break;
-    case ICMP6Packet.ECHO_REPLY:
-      if (DEBUG) System.out.println("ICMP6 got echo reply!!");
-      break;
-     /* this should be handled by the neighbor manager */
-    case ICMP6Packet.NEIGHBOR_SOLICITATION:
-      p = new ICMP6Packet();
-      p.targetAddress = icmpPacket.targetAddress;
-      p.type = ICMP6Packet.NEIGHBOR_ADVERTISEMENT;      
-      p.flags = ICMP6Packet.FLAG_SOLICITED |
-      ICMP6Packet.FLAG_OVERRIDE;
-      if (ipStack.isRouter()) {
-        p.flags |= ICMP6Packet.FLAG_ROUTER;
-      }
-      /* always send the linkaddr option */
-      p.addLinkOption(ICMP6Packet.TARGET_LINKADDR, ipStack.getLinkLayerAddress());
-      ipp = new IPv6Packet();
-      ipp.setIPPayload(p);
-      // is this ok?
-      if (Utils.equals(packet.sourceAddress, IPStack.UNSPECIFIED)) {
-          ipp.destAddress = IPStack.ALL_NODES;
-      } else {
-          ipp.destAddress = packet.sourceAddress;
-      }
 
-      /* always link lokal address here ??? - TODO: on which link?!*/
-      ipp.sourceAddress = ipStack.myLocalIPAddress;
-      ipStack.sendPacket(ipp, packet.netInterface);
-      break;
-    case ICMP6Packet.ROUTER_SOLICITATION:
-        ipStack.getNeighborManager().receiveNDMessage(packet);
-      break;
-    case ICMP6Packet.ROUTER_ADVERTISEMENT:
-      if (!ipStack.isRouter()) {
-        byte[] prefixInfo = icmpPacket.getOption(ICMP6Packet.PREFIX_INFO);
-        if (prefixInfo != null) {
-          byte[] prefix = new byte[16];
-          System.arraycopy(prefixInfo, 16, prefix, 0, prefix.length);
-          int size = prefixInfo[2];
-          ipStack.setPrefix(prefix, size);
+    public void setICMP6Listener(ICMP6Listener l) {
+        listener = l;
+    }
 
-          ipStack.getNeighborManager().receiveNDMessage(packet);
+    public void handlePacket(IPv6Packet packet) {
+        ICMP6Packet icmpPacket = new ICMP6Packet();
+        icmpPacket.parsePacketData(packet);
+        packet.setIPPayload(icmpPacket);
+
+        if (DEBUG) icmpPacket.printPacket(System.out);
+
+        if (listener != null) {
+            if (listener.ICMP6PacketReceived(packet))
+                return;
         }
-      }
-      break;
+
+        /* handle packet - just a test for now */
+        ICMP6Packet p;
+        IPv6Packet ipp;
+        switch (icmpPacket.type) {
+        case ICMP6Packet.ECHO_REQUEST:
+            p = new ICMP6Packet();
+            p.type = ICMP6Packet.ECHO_REPLY;
+            p.seqNo = icmpPacket.seqNo;
+            p.id = icmpPacket.id;
+            p.echoData = icmpPacket.echoData;
+            ipp = new IPv6Packet();
+            ipp.setIPPayload(p);
+            // is this ok?
+            ipp.destAddress = packet.sourceAddress;
+            ipp.sourceAddress = ipStack.myIPAddress;
+
+            ipStack.sendPacket(ipp, packet.netInterface);
+            break;
+        case ICMP6Packet.ECHO_REPLY:
+            if (DEBUG) System.out.println("ICMP6 got echo reply!!");
+            break;
+            /* this should be handled by the neighbor manager */
+        case ICMP6Packet.NEIGHBOR_SOLICITATION:
+            p = new ICMP6Packet();
+            p.targetAddress = icmpPacket.targetAddress;
+            p.type = ICMP6Packet.NEIGHBOR_ADVERTISEMENT;
+            p.flags = ICMP6Packet.FLAG_SOLICITED |
+                    ICMP6Packet.FLAG_OVERRIDE;
+            if (ipStack.isRouter()) {
+                p.flags |= ICMP6Packet.FLAG_ROUTER;
+            }
+            /* always send the linkaddr option */
+            p.addLinkOption(ICMP6Packet.TARGET_LINKADDR, ipStack.getLinkLayerAddress());
+            ipp = new IPv6Packet();
+            ipp.setIPPayload(p);
+            // is this ok?
+            if (Utils.equals(packet.sourceAddress, IPStack.UNSPECIFIED)) {
+                ipp.destAddress = IPStack.ALL_NODES;
+            } else {
+                ipp.destAddress = packet.sourceAddress;
+            }
+
+            /* always link lokal address here ??? - TODO: on which link?!*/
+            ipp.sourceAddress = ipStack.myLocalIPAddress;
+            ipStack.sendPacket(ipp, packet.netInterface);
+            break;
+        case ICMP6Packet.ROUTER_SOLICITATION:
+            ipStack.getNeighborManager().receiveNDMessage(packet);
+            break;
+        case ICMP6Packet.ROUTER_ADVERTISEMENT:
+            if (!ipStack.isRouter()) {
+                byte[] prefixInfo = icmpPacket.getOption(ICMP6Packet.PREFIX_INFO);
+                if (prefixInfo != null) {
+                    byte[] prefix = new byte[16];
+                    System.arraycopy(prefixInfo, 16, prefix, 0, prefix.length);
+                    int size = prefixInfo[2];
+                    ipStack.setPrefix(prefix, size);
+
+                    ipStack.getNeighborManager().receiveNDMessage(packet);
+                }
+            }
+            break;
+        }
     }
-  }
 }

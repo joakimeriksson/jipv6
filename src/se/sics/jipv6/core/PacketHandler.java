@@ -42,9 +42,9 @@ package se.sics.jipv6.core;
 
 public interface PacketHandler {
 
-  public void addUpperLayerHandler(int protoID,PacketHandler handler);
-  public void setLowerLayerHandler(PacketHandler handler);
-  public void packetReceived(MacPacket container);
-  public void sendPacket(MacPacket packet);
-  
+    public void addUpperLayerHandler(int protoID,PacketHandler handler);
+    public void setLowerLayerHandler(PacketHandler handler);
+    public void packetReceived(MacPacket container);
+    public void sendPacket(MacPacket packet);
+
 }

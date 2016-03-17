@@ -46,54 +46,54 @@ import se.sics.jipv6.core.NetworkInterface;
 import se.sics.jipv6.core.MacPacket;
 
 public class LoWPANHandler extends AbstractPacketHandler implements NetworkInterface {
-  
-  private IPStack ipStack;
-  
-  public LoWPANHandler() {
-  }
 
-  public void setIPStack(IPStack stack) {
-    ipStack = stack;
-  }
-  
-  public String getName() {
-    return "6lowpan";
-  }
-  
-  public boolean isReady() {
-    return true;
-  }
-  
-  public void packetReceived(MacPacket packet) {
-    /* create IP packet based on the correct dispatch */
-    IPv6Packet ipPacket = new IPv6Packet(packet);
-    int dispatch = packet.getData(0);
-    packet.setAttribute("6lowpan.dispatch", dispatch);
-    /* remove the dispatch and continue */
-    ipPacket.incPos(1);
-    if (dispatch == ipStack.getDefaultPacketer().getDispatch()) {
-      ipStack.getDefaultPacketer().parsePacketData(ipPacket);
-      /* send in the packet */
-      ipPacket.netInterface = this;
-      ipStack.receivePacket(ipPacket);
+    private IPStack ipStack;
+
+    public LoWPANHandler() {
     }
-  }
 
-  public void sendPacket(IPv6Packet packet) {
-    /* LoWPANHandler is for IP over 802.15.4 */
-    // Get packeter and create packet
-    byte[] data = ipStack.getPacketer().generatePacketData((IPv6Packet)packet);
-    packet.setBytes(data);
-    /* set the dispatch */
-    byte[] data2 = new byte[1];
-    data2[0] = ipStack.getPacketer().getDispatch();
-    packet.prependBytes(data2);
-    /* give to lower layer for sending on... */
-    lowerLayer.sendPacket(packet);
-  }
+    public void setIPStack(IPStack stack) {
+        ipStack = stack;
+    }
 
-  public void sendPacket(MacPacket packet) {
-    sendPacket((IPv6Packet) packet);
-  }
+    public String getName() {
+        return "6lowpan";
+    }
+
+    public boolean isReady() {
+        return true;
+    }
+
+    public void packetReceived(MacPacket packet) {
+        /* create IP packet based on the correct dispatch */
+        IPv6Packet ipPacket = new IPv6Packet(packet);
+        int dispatch = packet.getData(0);
+        packet.setAttribute("6lowpan.dispatch", dispatch);
+        /* remove the dispatch and continue */
+        ipPacket.incPos(1);
+        if (dispatch == ipStack.getDefaultPacketer().getDispatch()) {
+            ipStack.getDefaultPacketer().parsePacketData(ipPacket);
+            /* send in the packet */
+            ipPacket.netInterface = this;
+            ipStack.receivePacket(ipPacket);
+        }
+    }
+
+    public void sendPacket(IPv6Packet packet) {
+        /* LoWPANHandler is for IP over 802.15.4 */
+        // Get packeter and create packet
+        byte[] data = ipStack.getPacketer().generatePacketData((IPv6Packet)packet);
+        packet.setBytes(data);
+        /* set the dispatch */
+        byte[] data2 = new byte[1];
+        data2[0] = ipStack.getPacketer().getDispatch();
+        packet.prependBytes(data2);
+        /* give to lower layer for sending on... */
+        lowerLayer.sendPacket(packet);
+    }
+
+    public void sendPacket(MacPacket packet) {
+        sendPacket((IPv6Packet) packet);
+    }
 
 }

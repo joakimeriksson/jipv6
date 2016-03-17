@@ -13,7 +13,7 @@ public class SenseCommand extends BasicAsyncCommand implements Runnable {
     private CommandContext context;
     private final IAccelerometer3D accelerometerSensor = EDemoBoard.getInstance().getAccelerometer();
     private final ITriColorLED[] leds = EDemoBoard.getInstance().getLEDs();
-    
+
     public SenseCommand() {
         super("read sensors regularly", "msek");
     }
@@ -38,7 +38,7 @@ public class SenseCommand extends BasicAsyncCommand implements Runnable {
         int led = 0;
         while(!exit) {
             try {
-                double x = accelerometerSensor.getAccelX(); 
+                double x = accelerometerSensor.getAccelX();
                 double y = accelerometerSensor.getAccelY();
                 double z = accelerometerSensor.getAccelZ();
                 Thread.sleep(sleep);
@@ -50,13 +50,13 @@ public class SenseCommand extends BasicAsyncCommand implements Runnable {
                 } else if (led == 4) {
                     for (int i = 0; i < 8; i++) {
                         leds[i].setRGB(255, 0, 0);
-                    }                    
+                    }
                 }
                 for (int i = 0; i < 8; i++) {
                     leds[i].setRGB((int) (leds[i].getRed() / 2),
                             (int) (leds[i].getGreen() / 2),
                             (int) (leds[i].getBlue() / 2));
-                }                
+                }
 
                 if (z < -0.2 && play) {
                     send("stop");

@@ -41,7 +41,7 @@ import java.util.zip.CRC32;
 public class Encap {
 
     private static final boolean DEBUG = false;
-    
+
     private static final int MAX_VERSION = 2;
 
     private static final int LENOPT_OPTION_CRC       = 1;
@@ -73,7 +73,7 @@ public class Encap {
         encap.payloadData = serial;
         return encap;
     }
-    
+
     /* Only handles serial with CRC at the moment */
     public byte[] generateBytes() {
         if (this.fingerPrintMode != FingerPrintMode.LENOPT) {
@@ -96,7 +96,7 @@ public class Encap {
         data[6] = (byte) (payloadData.length / 256);
         data[7] = (byte) (payloadData.length & 255);
         System.arraycopy(payloadData, 0, data, 8, payloadData.length);
-        int pos = 8 + payloadData.length; 
+        int pos = 8 + payloadData.length;
         if (this.crcEnabled) {
             CRC32 crc = new CRC32();
             crc.update(data, 0, pos);
@@ -108,7 +108,7 @@ public class Encap {
         }
         return data;
     }
-    
+
     public static Encap parseEncap(byte[] data) throws ParseException {
         if (data == null || data.length < 4) {
             throw new ParseException("too short data: " + (data == null ? 0 : data.length)
@@ -128,8 +128,8 @@ public class Encap {
         int fingerPrintModeCode = (data[3] >> 4) & 0xf;
         encap.fingerPrintMode = FingerPrintMode.getByMode(fingerPrintModeCode);
         if (encap.fingerPrintMode == null) {
-           throw new ParseException("Unsupported fingerprint mode: " + fingerPrintModeCode,
-                   Error.BAD_FINGERPRINT_MODE);
+            throw new ParseException("Unsupported fingerprint mode: " + fingerPrintModeCode,
+                    Error.BAD_FINGERPRINT_MODE);
         }
         offset += encap.fingerPrintMode.getSize();
 
@@ -159,7 +159,7 @@ public class Encap {
         if (DEBUG) {
             System.out.println("Total Len: " + data.length);
             System.out.println("payloadLen: " + encap.optLen + " =?= "
-            + (data.length - offset - (encap.crcEnabled ? 4 : 0)));
+                    + (data.length - offset - (encap.crcEnabled ? 4 : 0)));
         }
 
         if (encap.crcEnabled) {

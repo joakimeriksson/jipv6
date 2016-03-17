@@ -19,7 +19,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
         int DAO_ACK;
         int rplRank;
         byte[] parentAddr = null;
-        
+
         public String toString() {
             String parentStr = "-";
             if (parentAddr != null) {
@@ -29,15 +29,15 @@ public class RPLAnalyzer implements PacketAnalyzer {
                     " DAO:" + DAO + " DAO_ACK:" + DAO_ACK + " Rank:" + (rplRank / 128.0) + " Parent: " + parentStr;
         }
     }
-    
+
     private int dioPacket;
     private int bcDISPacket;
     private int ucDISPacket;
     private int daoPacket;
-    
-    
+
+
     private NodeTable nodeTable;
-    
+
     @Override
     public void init(NodeTable table) {
         nodeTable = table;
@@ -69,15 +69,15 @@ public class RPLAnalyzer implements PacketAnalyzer {
                 sourceNode.properties.put("rplstats", stats);
             }
         }
-        
+
         long elapsed = nodeTable.getElapsed();
         String timeStr = String.format("%d:%02d:%02d.%03d %3d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
                 (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
-        
+
         while (payload instanceof IPv6ExtensionHeader) {
             payload = ((IPv6ExtensionHeader) payload).getNext();
         }
-        
+
         if (payload instanceof RPLPacket) {
             RPLPacket rpl = (RPLPacket) payload;
             switch (rpl.getCode()) {
@@ -123,7 +123,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
                 daoPacket++;
                 nodeTable.printAck = true;
                 System.out.printf("[%s] DAO from: ", timeStr);
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());     
+                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
                 System.out.print(" ");
                 rpl.printPacket(System.out);
                 if (stats != null) {

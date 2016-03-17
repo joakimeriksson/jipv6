@@ -15,7 +15,7 @@ import se.sics.jipv6.yal.ParseException;
 public class SerialRadioConnection implements Runnable {
 
     private static boolean DEBUG = false;
-    
+
     private static final int SLIP_END = 0300;
     private static final int SLIP_ESC = 0333;
     private static final int SLIP_ESC_END = 0334;
@@ -25,20 +25,20 @@ public class SerialRadioConnection implements Runnable {
     private Socket socket;
     private InputStream input;
     private OutputStream output;
-    
+
     byte[] buffer = new byte[1000];
     int pos;
 
     public interface PacketListener {
         public void packetReceived(byte[] data);
     }
-    
+
     PacketListener listener;
-    
+
     public SerialRadioConnection(PacketListener listener) {
         this.listener = listener;
     }
-    
+
     public void connect(String host) throws UnknownHostException, IOException {
         connect(host, 9999);
     }
@@ -104,7 +104,7 @@ public class SerialRadioConnection implements Runnable {
             e.printStackTrace();
         }
     }
-    
+
     public void send(byte[] data) throws IOException {
         Encap encap = Encap.createSerial(data);
         byte[] outData = encap.generateBytes();
@@ -125,7 +125,7 @@ public class SerialRadioConnection implements Runnable {
         output.write(SLIP_END);
         output.flush();
     }
-    
+
     public void run() {
         int data;
         boolean esc = false;
@@ -136,7 +136,7 @@ public class SerialRadioConnection implements Runnable {
                     if (data == SLIP_ESC_END) {
                         buffer[pos++] = (byte) SLIP_END;
                     } else if (data == SLIP_ESC_ESC) {
-                        buffer[pos++] = (byte) SLIP_ESC;                    
+                        buffer[pos++] = (byte) SLIP_ESC;
                     } else {
                         System.out.println("Slip Error?");
                     }
@@ -151,7 +151,7 @@ public class SerialRadioConnection implements Runnable {
                     } else if (data == SLIP_ESC) {
                         esc = true;
                     } else {
-//                        System.out.println("Add byte to buffer: " + data);
+                        //                        System.out.println("Add byte to buffer: " + data);
                         buffer[pos++] = (byte) data;
                     }
                 }

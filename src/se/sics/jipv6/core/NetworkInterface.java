@@ -42,8 +42,8 @@ package se.sics.jipv6.core;
 
 /* IP network interface */
 public interface NetworkInterface {
-  public String getName();
-  public void sendPacket(IPv6Packet packet);
-  public void setIPStack(IPStack stack);
-  public boolean isReady();
+    public String getName();
+    public void sendPacket(IPv6Packet packet);
+    public void setIPStack(IPStack stack);
+    public boolean isReady();
 }

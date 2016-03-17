@@ -65,7 +65,7 @@ public class JShark {
     IEEE802154Handler i154Handler;
     HC06Packeter hc06Packeter;
     SerialRadioConnection serialRadio;
-    
+
     NodeTable nodeTable = new NodeTable();
     private PCAPWriter pcapOutput;
 
@@ -117,7 +117,7 @@ public class JShark {
                 e.printStackTrace();
             }
         }
-        
+
         /* Allow all analyzers run on the raw packet */
         for(PacketAnalyzer analyzer: analyzers) {
             if (!analyzer.analyzeRawPacket(captured)) {
@@ -129,7 +129,7 @@ public class JShark {
         i154Handler.packetReceived(packet);
         //    packet.printPacket();
         //    i154Handler.printPacket(System.out, packet);
-        
+
         byte[] mac;
         Node sender = null;
         Node receiver = null;
@@ -152,7 +152,7 @@ public class JShark {
             }
         }
 
-        if (packet.getPayloadLength() > 1 && 
+        if (packet.getPayloadLength() > 1 &&
                 packet.getAttributeAsInt(IEEE802154Handler.PACKET_TYPE) == IEEE802154Handler.DATAFRAME) {
             IPv6Packet ipPacket = new IPv6Packet(packet);
             int dispatch = packet.getData(0);
@@ -216,20 +216,20 @@ public class JShark {
                 /* Add link local destination address */
                 byte[] destination = ipPacket.getDestinationAddress();
                 if (IPv6Packet.isMACBased(destination, ipPacket.getLinkDestination()) ||
-                    IPv6Packet.isLinkLocal(destination)) {
+                        IPv6Packet.isLinkLocal(destination)) {
                     Node node = nodeTable.getNodeByIP(destination);
                     if (node == null) {
                         node = nodeTable.getNodeByMAC(ipPacket.getLinkDestination());
                         nodeTable.addIPAddr(node, destination);
                     }
                 }
-                for(PacketAnalyzer analyzer: analyzers) {                    
+                for(PacketAnalyzer analyzer: analyzers) {
                     if (!analyzer.analyzeIPPacket(ipPacket, sender, receiver)) {
                         break;
                     }
                 }
             }
-        } 
+        }
     }
 
     public void setPCAPOutFile(String outfile) throws IOException {
@@ -237,7 +237,7 @@ public class JShark {
         this.pcapOutput.setAddingCRC(true);
     }
 
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException, 
+    public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
     IllegalAccessException, UnknownHostException, IOException {
         PacketAnalyzer analyzer = null;
         if (args.length > 0) {
@@ -294,9 +294,9 @@ public class JShark {
                             } else {
                                 System.out.println("Unhandled set command: " + line);
                             }
-                         } else {
-                             System.out.println("Set needs parameter and value: " + line);
-                         }
+                        } else {
+                            System.out.println("Set needs parameter and value: " + line);
+                        }
                     } else if (line.startsWith("get ")) {
                         String parts[] = line.split(" ");
                         if (parts.length > 1 ) {
@@ -308,9 +308,9 @@ public class JShark {
                             } else {
                                 System.out.println("Unhandled get command: " + line);
                             }
-                         } else {
-                             System.out.println("Set needs parameter and value: " + line);
-                         }
+                        } else {
+                            System.out.println("Set needs parameter and value: " + line);
+                        }
 
                     } else if (line.startsWith("print ")) {
                         String parts[] = line.split(" ");

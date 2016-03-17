@@ -48,56 +48,56 @@ import java.io.PrintStream;
  */
 public class StreamCommandHandler extends CommandHandler implements Runnable {
 
-  private InputStream inReader;
-  private boolean exit;
-  private String prompt;
+    private InputStream inReader;
+    private boolean exit;
+    private String prompt;
 
-  public StreamCommandHandler(InputStream in, PrintStream out, PrintStream err, String prompt) {
-    super(out, err);
-    this.prompt = prompt;
-    this.exit = false;
-    this.inReader = in;
-  }
-
-  public void start() {
-    new Thread(this, "cmd").start();
-  }
-
-  public void run() {
-    String lastLine = null;
-    while(!exit) {
-      try {
-        out.print(prompt);
-        out.flush();
-        String line = readLine(inReader);
-        // Simple execution of last called command line when not running from terminal with history support
-        if (((char) 27 + "[A").equals(line)) {
-          line = lastLine;
-        }
-        if (line != null && line.length() > 0) {
-          lastLine = line;
-          lineRead(line);
-        }
-      } catch (IOException e) {
-        e.printStackTrace();
-        err.println("Command line tool exiting...");
-        exit = true;
-      }
+    public StreamCommandHandler(InputStream in, PrintStream out, PrintStream err, String prompt) {
+        super(out, err);
+        this.prompt = prompt;
+        this.exit = false;
+        this.inReader = in;
     }
-  }
 
-  private String readLine(InputStream in) throws IOException {
-    StringBuffer sb = new StringBuffer();
-    int c;
-    while ((c = in.read()) > 0) {
-      if (c == '\n') {
-        return sb.toString();
-      }
-      if (c != '\r') {
-        sb.append((char)c);
-      }
+    public void start() {
+        new Thread(this, "cmd").start();
     }
-    return null;
-  }
+
+    public void run() {
+        String lastLine = null;
+        while(!exit) {
+            try {
+                out.print(prompt);
+                out.flush();
+                String line = readLine(inReader);
+                // Simple execution of last called command line when not running from terminal with history support
+                if (((char) 27 + "[A").equals(line)) {
+                    line = lastLine;
+                }
+                if (line != null && line.length() > 0) {
+                    lastLine = line;
+                    lineRead(line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                err.println("Command line tool exiting...");
+                exit = true;
+            }
+        }
+    }
+
+    private String readLine(InputStream in) throws IOException {
+        StringBuffer sb = new StringBuffer();
+        int c;
+        while ((c = in.read()) > 0) {
+            if (c == '\n') {
+                return sb.toString();
+            }
+            if (c != '\r') {
+                sb.append((char)c);
+            }
+        }
+        return null;
+    }
 
 }

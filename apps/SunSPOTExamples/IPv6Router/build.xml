@@ -2,23 +2,23 @@
 <!--
 
 Copyright (c) 2008 Sun Microsystems, Inc.
- 
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to 
-deal in the Software without restriction, including without limitation the 
-rights to use, copy, modify, merge, publish, distribute, sublicense, and/or 
-sell copies of the Software, and to permit persons to whom the Software is 
+of this software and associated documentation files (the "Software"), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
- 
-The above copyright notice and this permission notice shall be included in 
+
+The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 -->
@@ -29,7 +29,7 @@ DEALINGS IN THE SOFTWARE.
 <!-- some examples of how to customize the build. -->
 
     <!--
-    
+
     The master build file lives at: ${sunspot.home}/build.xml.
 
     If you do not have a Sun SPOT properties file for some reason,
@@ -103,8 +103,8 @@ DEALINGS IN THE SOFTWARE.
 
         ant -Dmain.class=com.sun... -Dmain.args=.... host-run
 
-    There exist several targets which are by default empty and which can be 
-    used for execution of your tasks. These targets are usually executed 
+    There exist several targets which are by default empty and which can be
+    used for execution of your tasks. These targets are usually executed
     before and after some main targets. They are defined as follows:
 
         For each target above (except help),
@@ -116,7 +116,7 @@ DEALINGS IN THE SOFTWARE.
 
         <target name="-post-compile">
             <echo>Compile finished!</echo>
-        </target>    
+        </target>
 
     For more information on using ant, see http://ant.apache.org.
 

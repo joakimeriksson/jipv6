@@ -46,6 +46,6 @@ package se.sics.sunspot.cli;
  */
 public interface LineListener {
 
-  public void lineRead(String line);
+    public void lineRead(String line);
 
 }

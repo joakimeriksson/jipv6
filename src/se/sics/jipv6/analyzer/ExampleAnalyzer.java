@@ -14,15 +14,14 @@ import se.sics.jipv6.pcap.CapturedPacket;
 public class ExampleAnalyzer implements PacketAnalyzer {
 
     private static final boolean DEBUG = false;
-   
+
     private int dataPacket;
     private int sleepPacket;
     private int nsPacket;
     private int totPacket;
-        
 
     private long startTime;
-    
+
     class SleepStats {
         int sleepSessions; /* number of detected sleep sessions */
         int sleepReports;
@@ -35,14 +34,14 @@ public class ExampleAnalyzer implements PacketAnalyzer {
             return "Sleep sessions:" + sleepSessions + " sleepReports:" + sleepReports + " AvgRepRespTime:" + avgReport2ResponseTime;
         }
     }
-    
+
     /* used for adding specific data per node */
     private NodeTable nodeTable;
 
     public void init(NodeTable table) {
         this.nodeTable = table;
     }
-    
+
     public void print() {
         long elapsed = System.currentTimeMillis() - startTime;
         if (elapsed < 1) {
@@ -59,13 +58,13 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         out.print(" to ");
         IPv6Packet.printAddress(out, packet.getDestinationAddress());
     }
-    
+
     /* MAC packet received */
     public boolean analyzeMacPacket(MacPacket packet, Node src, Node dst) {
         /* allow other analyzers to continue */
         return true;
     }
-    
+
     /* IPv6 packet received */
     public boolean analyzeIPPacket(IPv6Packet packet, Node macSource, Node macDestination) {
         long responseTime = 0;
@@ -77,7 +76,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         long elapsed = nodeTable.getElapsed();
         String timeStr = String.format("%d:%02d:%02d.%03d %3d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
                 (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
-        
+
         /* Unicast messages are assumed to be requests / replies */
         if (destNode != null) {
             NodeStats stats = nodeTable.getNodeStats(destNode);
@@ -92,7 +91,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                     responseTime = System.currentTimeMillis() - stats.lastReq;
                     /* clear lastReq */
                     stats.lastReq = 0;
-//                    System.out.println("**** Response within " + (System.currentTimeMillis() - stats.lastReq));
+                    //                    System.out.println("**** Response within " + (System.currentTimeMillis() - stats.lastReq));
                 }
             }
         }
@@ -150,7 +149,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 System.out.printf("[%s] *** UDP Message ", timeStr);
                 printFromTo(System.out, packet);
                 System.out.print(" " + (responseTime > 0 ? responseTime + " " : ""));
-                if (sourceNode != null) {                    
+                if (sourceNode != null) {
                     SleepStats sleepInfo = (SleepStats) sourceNode.properties.get("sleepInfo");
                     if (sleepInfo != null) {
                         long elapsedTime = packet.getTimeMillis() - sleepInfo.lastReportTime;
@@ -160,12 +159,12 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                             if(sleepInfo.avgReport2ResponseTime == 0) {
                                 sleepInfo.avgReport2ResponseTime = elapsedTime;
                             } else {
-                                sleepInfo.avgReport2ResponseTime = (sleepInfo.avgReport2ResponseTime * 9.0 + 
+                                sleepInfo.avgReport2ResponseTime = (sleepInfo.avgReport2ResponseTime * 9.0 +
                                         elapsedTime) / 10.0;
                             }
                         } else {
                             System.out.printf(" Sleepy Node. Long Time since report: %d avg: %f ",
-                                    elapsedTime, sleepInfo.avgReport2ResponseTime);                            
+                                    elapsedTime, sleepInfo.avgReport2ResponseTime);
                         }
                     }
                 }

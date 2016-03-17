@@ -49,22 +49,22 @@ import java.io.OutputStream;
  */
 public class LineOutputStream extends OutputStream {
 
-  private StringBuffer line = new StringBuffer();
-  private LineListener listener;
+    private StringBuffer line = new StringBuffer();
+    private LineListener listener;
 
-  public LineOutputStream(LineListener listener) {
-    this.listener = listener;
-  }
-
-  /* Buffers and calls line listener when a line is complete
-   * @see java.io.OutputStream#write(int)
-   */
-  public void write(int c) throws IOException {
-    if (c == '\n') {
-      listener.lineRead(line.toString());
-      line.setLength(0);
-    } else if (c != '\r'){
-      line.append((char) c);
+    public LineOutputStream(LineListener listener) {
+        this.listener = listener;
     }
-  }
+
+    /* Buffers and calls line listener when a line is complete
+     * @see java.io.OutputStream#write(int)
+     */
+    public void write(int c) throws IOException {
+        if (c == '\n') {
+            listener.lineRead(line.toString());
+            line.setLength(0);
+        } else if (c != '\r'){
+            line.append((char) c);
+        }
+    }
 }

@@ -5,15 +5,15 @@ import java.io.PrintStream;
 public class RPLPacket extends ICMP6Packet {
 
     public static final int ICMP6_TYPE_RPL = 155;
-    
+
     public static final int RPL_DIS = 0;
     public static final int RPL_DIO = 1;
     public static final int RPL_DAO = 2;
     public static final int RPL_DAO_ACK = 3;
-    
+
     public static final int RPL_DAO_K_FLAG = 0x80; /* DAO ACK request */
     public static final int RPL_DAO_D_FLAG = 0x40; /* DODAG ID Present */
-    
+
     public int instanceID;
     public int version;
     public int rank;
@@ -21,7 +21,7 @@ public class RPLPacket extends ICMP6Packet {
     public int dtsn;
     public int sequence;
     public int lifetime;
-    
+
     public byte[] dagID = new byte[16];
 
     /* This is from the DAO option - should allow multiple of these... */
@@ -34,12 +34,12 @@ public class RPLPacket extends ICMP6Packet {
     public static final byte RPL_OPTION_PADN = 1;
     public static final byte RPL_OPTION_TARGET = 5;
     public static final byte RPL_OPTION_TRANSIT = 6;
-    
+
     public RPLPacket(int code) {
         super.type = ICMP6_TYPE_RPL;
         super.code = code;
     }
-    
+
     public RPLPacket() {
     }
 
@@ -54,13 +54,13 @@ public class RPLPacket extends ICMP6Packet {
             instanceID = packet.getData(0) & 0xff;
             version = packet.getData(1) & 0xff;
             rank = packet.get16(2) & 0xffff;
-            
+
             flag = packet.getData(4) & 0xff;
             dtsn = packet.getData(5) & 0xff;
 
             /* two reserved */
             packet.incPos(8);
-            
+
             /* copy DAG ID */
             packet.copy(0, dagID, 0, 16);
             break;
@@ -72,15 +72,15 @@ public class RPLPacket extends ICMP6Packet {
 
             packet.incPos(4);
 
- //           System.out.print("Parsing DAO");
+            //           System.out.print("Parsing DAO");
             if ((flag & RPL_DAO_D_FLAG) > 0) {
                 /* copy DAG ID */
                 packet.copy(0, dagID, 0, 16);
                 packet.incPos(16);
-//                System.out.print(" DAG ID:");
-//                IPv6Packet.printAddress(System.out, dagID);
+                //                System.out.print(" DAG ID:");
+                //                IPv6Packet.printAddress(System.out, dagID);
             }
-            
+
             /* Handle the options */
             while(packet.getPayloadLength() > 0) {
                 boolean skipLen = false;
@@ -93,12 +93,12 @@ public class RPLPacket extends ICMP6Packet {
                 case RPL_OPTION_TARGET:
                     /* will only handle one target for now... */
                     targetPrefixLen = packet.getData(3) & 0xff;
-//                    System.out.print("Got TARGET option - prefixlen:" + targetPrefixLen);
+                    //                    System.out.print("Got TARGET option - prefixlen:" + targetPrefixLen);
                     packet.copy(4, targetPrefix, 0, (targetPrefixLen + 7) / 8);
                     break;
                 case RPL_OPTION_TRANSIT:
                     lifetime = packet.getData(5);
- //                   System.out.print("Lifetime: " + lifetime);
+                    //                   System.out.print("Lifetime: " + lifetime);
                     break;
                 default:
                 }
@@ -106,7 +106,7 @@ public class RPLPacket extends ICMP6Packet {
                     packet.incPos(2 + packet.getData(1) & 0xff);
                 }
             }
- //           System.out.println();
+            //           System.out.println();
             break;
         }
     }
@@ -115,7 +115,7 @@ public class RPLPacket extends ICMP6Packet {
         RPLPacket p = new RPLPacket(RPL_DIS);
         return p;
     }
-        
+
     public void printPacket(PrintStream out) {
         String name = "";
         if (code < RPL_NAMES.length) {

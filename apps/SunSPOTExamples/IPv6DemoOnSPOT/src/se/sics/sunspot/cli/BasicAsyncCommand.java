@@ -46,7 +46,7 @@ package se.sics.sunspot.cli;
  */
 public abstract class BasicAsyncCommand extends BasicCommand implements AsyncCommand {
 
-  public BasicAsyncCommand(String cmdHelp, String argHelp) {
-    super(cmdHelp, argHelp);
-  }
+    public BasicAsyncCommand(String cmdHelp, String argHelp) {
+        super(cmdHelp, argHelp);
+    }
 }

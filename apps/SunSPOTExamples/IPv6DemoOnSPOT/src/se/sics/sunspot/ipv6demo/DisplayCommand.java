@@ -48,7 +48,7 @@ public class DisplayCommand extends BasicCommand implements Runnable {
     private final ITriColorLED[] leds = EDemoBoard.getInstance().getLEDs();
     private int value;
     private Thread thread = null;
-    
+
     public DisplayCommand() {
         super("display the leds", "[value]");
     }
@@ -61,7 +61,7 @@ public class DisplayCommand extends BasicCommand implements Runnable {
         }
         return 0;
     }
-    
+
     public void run() {
         while(true) {
             int color = 0xff;
