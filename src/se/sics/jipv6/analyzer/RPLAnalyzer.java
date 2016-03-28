@@ -71,30 +71,26 @@ public class RPLAnalyzer implements PacketAnalyzer {
         }
 
         long elapsed = nodeTable.getElapsed();
-        String timeStr = String.format("%d:%02d:%02d.%03d %3d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
-                (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
-
         while (payload instanceof IPv6ExtensionHeader) {
             payload = ((IPv6ExtensionHeader) payload).getNext();
         }
 
         if (payload instanceof RPLPacket) {
             RPLPacket rpl = (RPLPacket) payload;
+            printStart(System.out, packet, elapsed);
             switch (rpl.getCode()) {
             case RPLPacket.RPL_DIS:
                 if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
                     /* ... */
                     nodeTable.printAck = true;
-                    System.out.printf("[%s] *** Probe or repair from: ", timeStr);
-                    IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                    System.out.printf("DIS - *** Probe or repair");
                     System.out.print(" ");
                     ucDISPacket++;
                     if (stats != null) {
                         stats.ucDIS++;
                     }
                 } else {
-                    System.out.printf("[%s] *** Warning - broadcast DIS!!! from: ", timeStr);
-                    IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                    System.out.printf("DIS - *** Warning - broadcast DIS!!!");
                     System.out.println();
                     bcDISPacket++;
                     if (stats != null) {
@@ -105,8 +101,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
             case RPLPacket.RPL_DIO:
                 dioPacket++;
                 String mCast = IPv6Packet.isLinkLocal(packet.getDestinationAddress()) ? "UC" : "MC";
-                System.out.printf("[%s] DIO (" + mCast + ") from: ", timeStr);
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                System.out.printf("DIO (" + mCast + ")");
                 System.out.print(" ");
                 rpl.printPacket(System.out);
                 if (stats != null) {
@@ -122,9 +117,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
             case RPLPacket.RPL_DAO:
                 daoPacket++;
                 nodeTable.printAck = true;
-                System.out.printf("[%s] DAO from: ", timeStr);
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
-                System.out.print(" ");
+                System.out.printf("DAO ");
                 rpl.printPacket(System.out);
                 if (stats != null) {
                     stats.DAO++;
@@ -133,8 +126,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
                 break;
             case RPLPacket.RPL_DAO_ACK:
                 nodeTable.printAck = true;
-                System.out.printf("[%s] DAO ACK from: ", timeStr);
-                IPv6Packet.printAddress(System.out, packet.getSourceAddress());
+                System.out.printf("DAO ACK");
                 if (stats != null) {
                     stats.DAO_ACK++;
                 }
