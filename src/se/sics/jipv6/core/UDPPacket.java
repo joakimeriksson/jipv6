@@ -157,7 +157,7 @@ public class UDPPacket implements IPPayload {
         }
     }
 
-    // TODO: HC01 should instead insert this data into the UDP packet so
+    // TODO: IPHC should instead insert this data into the UDP packet so
     // that there is no need for special handling-
     public int doVirtualChecksum(IPv6Packet packet) {
         byte[] vheader = new byte[8];

@@ -4,7 +4,7 @@
  *
  * Will use some "binary" protocol for communication with a host app.?
  *
- * Will handle HC01 compressed IPv6 packets over 6lowpan (802.15.4).
+ * Will handle IPHC compressed IPv6 packets over 6lowpan (802.15.4).
  */
 
 package se.sics.sunspot;
@@ -12,7 +12,7 @@ package se.sics.sunspot;
 import javax.microedition.io.*;
 
 import se.sics.jipv6.core.AbstractPacketHandler;
-import se.sics.jipv6.core.HC01Packeter;
+import se.sics.jipv6.core.IPHCPacketer;
 import se.sics.jipv6.core.IPStack;
 import se.sics.jipv6.core.IPv6Packet;
 import se.sics.jipv6.core.NetworkInterface;
@@ -37,7 +37,7 @@ public class IPv6Router {
     private static final short PAN_ID = (short)0xabcd;
     private ILowPan lpan;
     private IPStack ipStack;
-    private HC01Packeter hc01Packeter = new HC01Packeter();
+    private IPHCPacketer iphcPacketer = new IPHCPacketer();
     private I802_15_4_MAC mac = null;
 
     char[] hex = "0123456789ABCDEF".toCharArray();
@@ -76,7 +76,7 @@ public class IPv6Router {
         return addrL;
     }
 
-    IProtocolManager hc01Manager = new IProtocolManager() {
+    IProtocolManager iphcManager = new IProtocolManager() {
         public void processIncomingData(byte[] payload, LowPanHeaderInfo headerInfo) {
             System.out.println("**** LowPan: PACKET RECEIVED!!!");
             IPv6Packet ipPacket = new IPv6Packet();
@@ -86,7 +86,7 @@ public class IPv6Router {
                     addrToByte(headerInfo.sourceAddress));
             ipPacket.setAttribute(Packet.LL_DESTINATION,
                     addrToByte(headerInfo.destinationAddress));
-            hc01Packeter.parsePacketData(ipPacket);
+            iphcPacketer.parsePacketData(ipPacket);
             ipPacket.netInterface = macHandler;
             ipStack.receivePacket(ipPacket);
         }
@@ -145,7 +145,7 @@ public class IPv6Router {
             // where the 'on Desktop' portion of this demo is listening
             lpan = LowPan.getInstance();
             System.out.println("Low pan - registering protocol manager: " + lpan);
-            lpan.registerProtocolFamily((byte)0x03, hc01Manager);
+            lpan.registerProtocolFamily((byte)0x03, iphcManager);
 
             mac = RadioFactory.getI802_15_4_MAC();
             mac.mlmeStart(PAN_ID, 24);

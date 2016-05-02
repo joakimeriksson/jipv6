@@ -76,7 +76,7 @@ public class IPStack {
     byte[] linkBroadcast = new byte[] {(byte) 0xff, (byte) 0xff};
 
     private PacketHandler linkLayerHandler;
-    private IPPacketer defaultPacketer = new HC01Packeter();
+    private IPPacketer defaultPacketer = new IPHCPacketer();
     private ICMP6PacketHandler icmp6Handler;
     private TCPHandler tcpHandler = null;
     private UDPHandler udpHandler = null;
@@ -85,9 +85,6 @@ public class IPStack {
     private boolean isRouter = false;
 
     private NetworkInterface tunnel;
-    //TSPClient
-    /* this needs to be generalized later... and down to lowpan too... */
-    //private HC01Packeter ipPacketer = new HC01Packeter();
 
     private NeighborTable neighborTable = new NeighborTable();
     private NeighborManager neighborManager;
@@ -271,7 +268,7 @@ public class IPStack {
                 }
                 break;
             case UDPPacket.DISPATCH:
-                // TODO: move to HC01 compression handler... => generate raw UDP
+                // TODO: move to IPHC compression handler... => generate raw UDP
                 if (packet.getIPPayload() != null) {
                     packet.getIPPayload().printPacket(System.out);
                     udpHandler.handlePacket(packet, (UDPPacket) packet.getIPPayload());
@@ -316,7 +313,7 @@ public class IPStack {
             }
         } else if (packet.netInterface != linkLayerHandler) {
             /* Can not be from link layer (default) -- */
-            /* if HC01 - we need to handle UDP at least... */
+            /* if IPHC - we need to handle UDP at least... */
             if (DEBUG) System.out.println("#### PACKET FOR: " + packet.getDestinationAddress() + " sent to link");
             if (packet.ipPayload == null) {
                 packet.setIPPayload(new BytePayload(packet));
