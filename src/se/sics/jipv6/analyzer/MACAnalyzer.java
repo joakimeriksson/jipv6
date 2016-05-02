@@ -45,7 +45,7 @@ public class MACAnalyzer implements PacketAnalyzer {
             Node receiver) {
         int type = packet.getAttributeAsInt("802154.type");
         bytes += packet.getTotalLength() + 5 + 1 + 2; /* Preamble + len + crc */
-
+        long elapsed = nodeTable.getElapsed();
         // Take the time of first packet as start time
         NodeStats stats = nodeTable.getNodeStats(sender);
         if (stats != null) {
@@ -54,7 +54,9 @@ public class MACAnalyzer implements PacketAnalyzer {
 
         switch (type) {
         case IEEE802154Handler.BEACONFRAME:
+            printStart(System.out, packet, elapsed);
             beacon++;
+            System.out.println("Beacon Frame from:" + sender.macAddresses.get(0));
             if (stats != null) {
                 stats.beacon++;
             }
@@ -78,6 +80,8 @@ public class MACAnalyzer implements PacketAnalyzer {
             nodeTable.lastSeqNo = packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO);
             break;
         case IEEE802154Handler.CMDFRAME:
+            printStart(System.out, packet, elapsed);
+            System.out.println("Beacon Request");
             cmd++;
             break;
         }

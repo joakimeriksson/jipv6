@@ -26,14 +26,23 @@ public interface PacketAnalyzer {
         IPv6Packet.printAddress(out, packet.getDestinationAddress());
     }
 
+    default public void printStart(PrintStream out, MacPacket packet, long elapsed) {
+        String timeStr = String.format("[%d:%02d:%02d.%03d %3d]", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
+                (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
+        out.print(timeStr);
+        out.print(" ");
+    }
+
     default public void printStart(PrintStream out, IPv6Packet packet, long elapsed) {
         String timeStr = String.format("[%d:%02d:%02d.%03d %3d]", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
                 (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
         out.print(timeStr);
         out.print(" ");
         IPv6Packet.printAddress(out, packet.getSourceAddress());
+        out.printf("%c", packet.isSourceMACBased() ? '*' : '-');
         out.print(" -> ");
         IPv6Packet.printAddress(out, packet.getDestinationAddress());
+        out.printf("%c", packet.isDestinationMACBased() ? '*' : '-');
         out.print(" ");
     }
 
