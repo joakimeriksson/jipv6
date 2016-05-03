@@ -1,5 +1,8 @@
 package se.sics.jipv6.analyzer;
 
+import java.io.PrintStream;
+import java.util.HashMap;
+
 import se.sics.jipv6.core.IPPayload;
 import se.sics.jipv6.core.IPv6ExtensionHeader;
 import se.sics.jipv6.core.IPv6Packet;
@@ -18,6 +21,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
         int DAO;
         int DAO_ACK;
         int rplRank;
+        int topologyNodeID; /* for the topology generator */
         byte[] parentAddr = null;
 
         public String toString() {
@@ -37,10 +41,12 @@ public class RPLAnalyzer implements PacketAnalyzer {
 
 
     private NodeTable nodeTable;
+    private PrintStream out;
 
     @Override
-    public void init(NodeTable table) {
-        nodeTable = table;
+    public void init(NodeTable table, PrintStream out) {
+        this.nodeTable = table;
+        this.out = out;
     }
 
     @Override
@@ -77,21 +83,21 @@ public class RPLAnalyzer implements PacketAnalyzer {
 
         if (payload instanceof RPLPacket) {
             RPLPacket rpl = (RPLPacket) payload;
-            printStart(System.out, packet, elapsed);
+            printStart(out, packet, elapsed);
             switch (rpl.getCode()) {
             case RPLPacket.RPL_DIS:
                 if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
                     /* ... */
                     nodeTable.printAck = true;
-                    System.out.printf("DIS - *** Probe or repair");
-                    System.out.print(" ");
+                    out.printf("DIS - *** Probe or repair");
+                    out.print(" ");
                     ucDISPacket++;
                     if (stats != null) {
                         stats.ucDIS++;
                     }
                 } else {
-                    System.out.printf("DIS - *** Warning - broadcast DIS!!!");
-                    System.out.println();
+                    out.printf("DIS - *** Warning - broadcast DIS!!!");
+                    out.println();
                     bcDISPacket++;
                     if (stats != null) {
                         stats.mcDIS++;
@@ -101,9 +107,9 @@ public class RPLAnalyzer implements PacketAnalyzer {
             case RPLPacket.RPL_DIO:
                 dioPacket++;
                 String mCast = IPv6Packet.isLinkLocal(packet.getDestinationAddress()) ? "UC" : "MC";
-                System.out.printf("DIO (" + mCast + ")");
-                System.out.print(" ");
-                rpl.printPacket(System.out);
+                out.printf("DIO (" + mCast + ")");
+                out.print(" ");
+                rpl.printPacket(out);
                 if (stats != null) {
                     if ("UC".equals(mCast)) {
                         stats.ucDIO++;
@@ -117,8 +123,8 @@ public class RPLAnalyzer implements PacketAnalyzer {
             case RPLPacket.RPL_DAO:
                 daoPacket++;
                 nodeTable.printAck = true;
-                System.out.printf("DAO ");
-                rpl.printPacket(System.out);
+                out.printf("DAO ");
+                rpl.printPacket(out);
                 if (stats != null) {
                     stats.DAO++;
                     stats.parentAddr = packet.getDestinationAddress();
@@ -126,7 +132,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
                 break;
             case RPLPacket.RPL_DAO_ACK:
                 nodeTable.printAck = true;
-                System.out.printf("DAO ACK");
+                out.printf("DAO ACK");
                 if (stats != null) {
                     stats.DAO_ACK++;
                 }
@@ -138,7 +144,44 @@ public class RPLAnalyzer implements PacketAnalyzer {
 
     @Override
     public void print() {
-        System.out.println("RPL mcDIS: " + bcDISPacket + " ucDIS: " + ucDISPacket + " DIO: " + dioPacket + " DAO: " + daoPacket);
+        out.println("RPL mcDIS: " + bcDISPacket + " ucDIS: " + ucDISPacket + " DIO: " + dioPacket + " DAO: " + daoPacket);
+    }
+    
+    public static String getRPLTopology(NodeTable nodeTable) {
+        Node[] nodes = nodeTable.getAllNodes();
+        int nodeId = 1;
+        StringBuilder sb = new StringBuilder();
+        sb.append("var nodes = [");
+        /* Note - if this is called multiple times - the topology view might be broken... */
+        for (Node node : nodes) {
+            RPLStats stats = (RPLStats) node.properties.get("rplstats");
+            if (stats != null) {
+                stats.topologyNodeID = nodeId;
+                if(nodeId > 1) {
+                    sb.append(',');
+                }
+                sb.append("{id:").append(nodeId).append(", label:'N").append(nodeId).append("'}\n");
+                nodeId++;
+                /* Id to Node map */
+            }
+        }
+        sb.append("];\n");
+        sb.append("var edges = [");
+        for (Node node : nodes) {
+            RPLStats stats = (RPLStats) node.properties.get("rplstats");
+            if (stats != null) {
+                if (stats.parentAddr != null) {
+                    Node parent = nodeTable.getNodeByIP(stats.parentAddr);
+                    RPLStats pStats = (RPLStats) parent.properties.get("rplstats");
+                    if (pStats != null) {
+                        sb.append("{from:").append(stats.topologyNodeID).append(",to:").
+                            append(pStats.topologyNodeID).append("}\n");
+                    }
+                }
+            }
+        }
+        sb.append("];");
+        return sb.toString();
     }
 
 }

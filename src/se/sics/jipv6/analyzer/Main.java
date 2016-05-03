@@ -102,7 +102,7 @@ public class Main {
             usage(1);
         }
 
-        JShark sniff = new JShark(analyzer);
+        JShark sniff = new JShark(analyzer, System.out);
 
         CLI cli = new CLI();
 

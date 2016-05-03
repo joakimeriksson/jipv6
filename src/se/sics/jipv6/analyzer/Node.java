@@ -1,5 +1,6 @@
 package se.sics.jipv6.analyzer;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -15,18 +16,18 @@ public class Node {
     public int seqNo; /* the last seqNo of a packet sent towards the node */
 
 
-    public void print() {
-        System.out.print("Node - MAC:");
+    public void print(PrintWriter printWriter) {
+        printWriter.print("Node - MAC:");
         for(String mac : macAddresses) {
-            System.out.print("  " + mac);
+            printWriter.print("  " + mac);
         }
-        System.out.print("   IP:");
+        printWriter.print("   IP:");
         for(String ip : ipAddresses) {
-            System.out.print("  " + ip);
+            printWriter.print("  " + ip);
         }
-        System.out.println("\n   Sent/Received => sent: " + packetSent + " recv: " + packetReceived);
+        printWriter.println("\n   Sent/Received => sent: " + packetSent + " recv: " + packetReceived);
         for(String key : properties.keySet()) {
-            System.out.println("   " + key + " => " + properties.get(key).toString());
+            printWriter.println("   " + key + " => " + properties.get(key).toString());
         }
     }
 

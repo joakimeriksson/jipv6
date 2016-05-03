@@ -47,6 +47,10 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.spi.RestOfArgumentsHandler;
 
+import se.sics.jipv6.analyzer.JShark;
+import se.sics.jipv6.pcap.CapturedPacket;
+import se.sics.jipv6.util.Utils;
+
 public class MiscCommands {
 
     private MiscCommands() {
@@ -265,6 +269,22 @@ public class MiscCommands {
             context.executeCommand(command);
         }
     };
+
+    @CLICommand(name="hexinput", topic="core", description="input a hex packet")
+    public static class HexinCommand implements Command {
+
+        @Argument(usage="hexpacket", metaVar="PATTERN", required=true)
+        private String hexdata;
+
+        @Override
+        public int executeCommand(CommandContext context) throws CLIException {
+            context.out.println("Receive:" + hexdata);
+            byte[] packetData = Utils.hexconv(hexdata);
+            CapturedPacket packet = new CapturedPacket(System.currentTimeMillis(), packetData);
+            JShark.getJShark().packetData(packet);
+            return 0;
+        }
+    }
 
 
     @CLICommand(name="source", topic="core", description="run script")

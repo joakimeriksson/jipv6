@@ -1,5 +1,7 @@
 package se.sics.jipv6.analyzer;
 
+import java.io.PrintStream;
+
 import se.sics.jipv6.analyzer.NodeTable.NodeStats;
 import se.sics.jipv6.core.ICMP6Packet;
 import se.sics.jipv6.core.IPPayload;
@@ -20,6 +22,8 @@ public class ExampleAnalyzer implements PacketAnalyzer {
 
     private long startTime;
 
+    private PrintStream out;
+    
     class SleepStats {
         int sleepSessions; /* number of detected sleep sessions */
         int sleepReports;
@@ -36,8 +40,9 @@ public class ExampleAnalyzer implements PacketAnalyzer {
     /* used for adding specific data per node */
     private NodeTable nodeTable;
 
-    public void init(NodeTable table) {
+    public void init(NodeTable table, PrintStream out) {
         this.nodeTable = table;
+        this.out = out;
     }
 
     public void print() {
@@ -45,7 +50,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         if (elapsed < 1) {
             elapsed = 1;
         }
-        System.out.printf("Example Analyzer: Tot:%d NS:%d Sleep:%d Data:%d\n",
+        out.printf("Example Analyzer: Tot:%d NS:%d Sleep:%d Data:%d\n",
                 totPacket,
                 nsPacket, sleepPacket, dataPacket);
     }
@@ -79,15 +84,15 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                     responseTime = System.currentTimeMillis() - stats.lastReq;
                     /* clear lastReq */
                     stats.lastReq = 0;
-                    //                    System.out.println("**** Response within " + (System.currentTimeMillis() - stats.lastReq));
+                    //                    out.println("**** Response within " + (System.currentTimeMillis() - stats.lastReq));
                 }
             }
         }
 
         while (payload instanceof IPv6ExtensionHeader) {
             if (DEBUG) {
-                System.out.print("Analyzer - EXT HDR " + payload.getClass().getSimpleName() + ": ");
-                payload.printPacket(System.out);
+                out.print("Analyzer - EXT HDR " + payload.getClass().getSimpleName() + ": ");
+                payload.printPacket(out);
             }
             payload = ((IPv6ExtensionHeader) payload).getNext();
         }
@@ -99,7 +104,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 int flag = data[4] & 0xff;
                 int time = (data[6] & 0xff) * 256 + (data[7] & 0xff);
                 int seq = (data[5] & 0x0f);
-                printStart(System.out, packet, elapsed);
+                printStart(out, packet, elapsed);
                 if((flag & 0xf) == 0x01) {
                     if (sourceNode != null) {
                         SleepStats sleepInfo = (SleepStats) sourceNode.properties.get("sleepInfo");
@@ -108,7 +113,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                         }
                         sleepInfo.sleepSessions++;
                     }
-                    System.out.printf("UDP Sleep Awake in %d: Flag: %02x Dir:%s Seq:%d ",
+                    out.printf("UDP Sleep Awake in %d: Flag: %02x Dir:%s Seq:%d ",
                             time, flag, (flag & 0x80) > 0 ? "D" : "U", seq);
                 } else if ((flag & 0xf) == 0x02) {
                     if (destNode != null) {
@@ -118,11 +123,11 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                             sleepInfo.noPacket++;
                         }
                     }
-                    System.out.printf("UDP Sleep Report - no packet recived Flag: %02x Dir:%s Seq:%d ",
+                    out.printf("UDP Sleep Report - no packet recived Flag: %02x Dir:%s Seq:%d ",
                             flag, (flag & 0x80) > 0 ? "D" : "U", seq);
 
                 } else if ((flag & 0xf) == 0x03) {
-                    System.out.printf("UDP Sleep Report - packet recived Flag: %02x Dir:%s Seq: %d HoldTime: %d ",
+                    out.printf("UDP Sleep Report - packet recived Flag: %02x Dir:%s Seq: %d HoldTime: %d ",
                             flag, (flag & 0x80) > 0 ? "D" : "U", seq, time);
                     if (destNode != null) {
                         SleepStats sleepInfo = (SleepStats) destNode.properties.get("sleepInfo");
@@ -132,21 +137,21 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                         }
                     }
                 } else {
-                    System.out.println("Unknown sleep packet");
+                    out.println("Unknown sleep packet");
                 }
                 sleepPacket++;
             } else {
                 dataPacket++;
                 nodeTable.printAck = true;
-                printStart(System.out, packet, elapsed);
-                System.out.printf("UDP Message (UC/Global)");
-                System.out.print(" " + (responseTime > 0 ? responseTime + " " : ""));
+                printStart(out, packet, elapsed);
+                out.printf("UDP Message (UC/Global)");
+                out.print(" " + (responseTime > 0 ? responseTime + " " : ""));
                 if (sourceNode != null) {
                     SleepStats sleepInfo = (SleepStats) sourceNode.properties.get("sleepInfo");
                     if (sleepInfo != null) {
                         long elapsedTime = packet.getTimeMillis() - sleepInfo.lastReportTime;
                         if(elapsedTime < 1000) {
-                            System.out.printf(" Sleepy Node. Time since report: %d avg: %f ",
+                            out.printf(" Sleepy Node. Time since report: %d avg: %f ",
                                     elapsedTime, sleepInfo.avgReport2ResponseTime);
                             if(sleepInfo.avgReport2ResponseTime == 0) {
                                 sleepInfo.avgReport2ResponseTime = elapsedTime;
@@ -155,7 +160,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                                         elapsedTime) / 10.0;
                             }
                         } else {
-                            System.out.printf(" Sleepy Node. Long Time since report: %d avg: %f ",
+                            out.printf(" Sleepy Node. Long Time since report: %d avg: %f ",
                                     elapsedTime, sleepInfo.avgReport2ResponseTime);
                         }
                     }
@@ -164,21 +169,21 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         } else if (payload instanceof ICMP6Packet) {
             ICMP6Packet icmp6 = (ICMP6Packet) payload;
             if (icmp6.getType() == ICMP6Packet.NEIGHBOR_SOLICITATION) {
-                printStart(System.out, packet, elapsed);
-                System.out.print("ICMP6 *** Warning - Neighbor solicitation!!! ");
-                System.out.println();
+                printStart(out, packet, elapsed);
+                out.print("ICMP6 *** Warning - Neighbor solicitation!!! ");
+                out.println();
                 nsPacket++;
             } else if (icmp6.getType() == ICMP6Packet.ECHO_REPLY) {
                 if (responseTime < 1000 && responseTime > 0) {
-                    printStart(System.out, packet, elapsed);
-                    System.out.printf("ICMP6 Echo Reply within: %d", responseTime);
-                    System.out.println();
+                    printStart(out, packet, elapsed);
+                    out.printf("ICMP6 Echo Reply within: %d", responseTime);
+                    out.println();
                 }
             } else if (icmp6.getType() == ICMP6Packet.ECHO_REQUEST) {
                 if (responseTime < 1000 && responseTime > 0) {
-                    printStart(System.out, packet, elapsed);
-                    System.out.printf("ICMP6 Echo Request");
-                    System.out.println();
+                    printStart(out, packet, elapsed);
+                    out.printf("ICMP6 Echo Request");
+                    out.println();
                 }
             }
         }

@@ -41,10 +41,13 @@ package se.sics.jipv6.analyzer;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import jdk.internal.org.objectweb.asm.tree.analysis.Analyzer;
 import se.sics.jipv6.core.IPHCPacketer;
 import se.sics.jipv6.core.HopByHopOption;
 import se.sics.jipv6.core.ICMP6Packet;
@@ -61,6 +64,8 @@ import se.sics.jipv6.util.Utils;
 public class JShark {
     /* Run JIPv6 over TUN on linux of OS-X */
 
+    public static JShark defaultJShark;
+    
     ArrayList<PacketAnalyzer> analyzers = new ArrayList<PacketAnalyzer>();
     IEEE802154Handler i154Handler;
     IPHCPacketer iphcPacketer;
@@ -68,19 +73,41 @@ public class JShark {
 
     NodeTable nodeTable = new NodeTable();
     private PCAPWriter pcapOutput;
-
-    public JShark(PacketAnalyzer a) {
+    private PrintStream out;
+    
+    public JShark(PacketAnalyzer a, PrintStream out) {
         analyzers.add(new MACAnalyzer());
         analyzers.add(new RPLAnalyzer());
         analyzers.add(a);
         i154Handler = new IEEE802154Handler();
         iphcPacketer = new IPHCPacketer();
         iphcPacketer.setContext(0, 0xaaaa0000, 0, 0, 0);
-        for (PacketAnalyzer analyzer : analyzers) {
-            analyzer.init(nodeTable);
+        this.out = out;
+        setOut(out);
+        if (defaultJShark == null) {
+            defaultJShark = this;
         }
     }
 
+    public static JShark getJShark() {
+        return defaultJShark;
+    }
+    
+    private void setOut(PrintStream out) {
+        for (PacketAnalyzer analyzer : analyzers) {
+            analyzer.init(nodeTable, out);
+        }
+    }
+    
+    public void setPrintStream(PrintStream out) {
+        this.out = out;
+        setOut(out);
+    }
+    
+    public NodeTable getNodeTable() {
+        return nodeTable;
+    }
+    
     public void connect(String host) throws UnknownHostException, IOException {
         connect(host, -1);
     }
@@ -223,6 +250,16 @@ public class JShark {
                         nodeTable.addIPAddr(node, destination);
                     }
                 }
+                byte[] source = ipPacket.getSourceAddress();
+                if (IPv6Packet.isMACBased(source, ipPacket.getLinkSource()) ||
+                        IPv6Packet.isLinkLocal(source)) {
+                    Node node = nodeTable.getNodeByIP(source);
+                    if (node == null) {
+                        node = nodeTable.getNodeByMAC(ipPacket.getLinkSource());
+                        nodeTable.addIPAddr(node, source);
+                    }
+                }
+
                 for(PacketAnalyzer analyzer: analyzers) {
                     if (!analyzer.analyzeIPPacket(ipPacket, sender, receiver)) {
                         break;
@@ -255,7 +292,10 @@ public class JShark {
                 analyzer = (PacketAnalyzer) paClass.newInstance();
             }
         }
-        JShark sniff = new JShark(analyzer);
+        if (analyzer == null) {
+            analyzer = new ExampleAnalyzer();
+        }
+        JShark sniff = new JShark(analyzer, System.out);
         if(args.length > 1) {
             sniff.connect(args[1]);
         } else {
@@ -316,7 +356,7 @@ public class JShark {
                         String parts[] = line.split(" ");
                         if (parts.length > 1) {
                             if ("nodes".equals(parts[1])) {
-                                this.nodeTable.print();
+                                this.nodeTable.print(new PrintWriter(System.out));
                             } else if ("stats".equals(parts[1])) {
                                 for(PacketAnalyzer analyzer: analyzers) {
                                     analyzer.print();

@@ -1,4 +1,5 @@
 package se.sics.jipv6.analyzer;
+import java.io.PrintWriter;
 import java.util.HashMap;
 
 import se.sics.jipv6.core.IPv6Packet;
@@ -61,12 +62,12 @@ public class NodeTable {
         return nodeTable.get(addr);
     }
 
-    public void print() {
+    public void print(PrintWriter printWriter) {
         for(String key : nodeTable.keySet()) {
             Node node = nodeTable.get(key);
             if (key.length() < 24) {
                 /* A MAC address - shorter then IPv6 address... */
-                node.print();
+                node.print(printWriter);
             }
         }
     }
@@ -79,4 +80,25 @@ public class NodeTable {
         }
     }
 
+
+    public int nodeCount() {
+        return nodeTable.size();
+    }
+
+
+    public Node[] getAllNodes() {
+        // TODO Auto-generated method stub
+        HashMap<Node, Node> uniqueMap = new HashMap<Node, Node>();
+        Node[] nodes = nodeTable.values().toArray(new Node[0]);
+        System.out.println("Started with: " + nodes.length);
+        for (int i = 0; i < nodes.length; i++) {
+            Node n = nodes[i];
+            if (!uniqueMap.containsKey(n)) {
+                uniqueMap.put(n,n);
+            }
+        }
+        nodes = uniqueMap.values().toArray(new Node[0]);
+        System.out.println("ended with: " + nodes.length);
+        return nodes;
+    }
 }

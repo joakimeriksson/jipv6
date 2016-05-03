@@ -8,7 +8,7 @@ import se.sics.jipv6.pcap.CapturedPacket;
 
 public interface PacketAnalyzer {
 
-    public void init(NodeTable table);
+    public void init(NodeTable table, PrintStream out);
 
     /* If any analyzer returns false the packet will be "consumed" for the other analyzers */
     public boolean analyzeRawPacket(CapturedPacket packet);

@@ -99,20 +99,29 @@ public class IEEE802154Handler extends AbstractPacketHandler {
         int pending = (packet.getData(0) >> PENDING_BIT) & 1;
         int ackRequired = (packet.getData(0) >> ACKREQ_BIT) & 1;
         int panCompression  = (packet.getData(0) >> PANCOMPR_BIT) & 1;
+        int seqCompression = packet.getData(1) & 1;
         int destAddrMode = (packet.getData(1) >> 2) & 3;
         int frameVersion = (packet.getData(1) >> 4) & 3;
         int srcAddrMode = (packet.getData(1) >> 6) & 3;
 
         /* SeqNo can be compressed! */
-        int seqNumber = packet.getData(2);
+        int pos = 2;
+        int seqNumber = 0;
+        if(seqCompression == 0) {
+            seqNumber = packet.getData(2);
+            pos++;
+        } else {
+            if(DEBUG) System.out.println("Seqno compressed.");
+        }
 
-        int pos = 3;
+        packet.setAttribute(DESTINATION_MODE, destAddrMode);
+        packet.setAttribute(SOURCE_MODE, srcAddrMode);
+        
         int destPanID = 0;
         if (destAddrMode > 0) {
             destPanID = (packet.getData(pos) & 0xff) + ((packet.getData(pos + 1) & 0xff) << 8);
             packet.setAttribute(DESTINATION_PAN_ID, destPanID);
             pos += 2;
-            packet.setAttribute(DESTINATION_MODE, destAddrMode);
             if (destAddrMode == SHORT_ADDRESS) {
                 byte[] destAddress = new byte[2];
                 destAddress[1] = packet.getData(pos);
@@ -140,7 +149,6 @@ public class IEEE802154Handler extends AbstractPacketHandler {
                 srcPanID = destPanID;
             }
             packet.setAttribute(SOURCE_PAN_ID, srcPanID);
-            packet.setAttribute(SOURCE_MODE, srcAddrMode);
             if (srcAddrMode == SHORT_ADDRESS) {
                 byte[] sourceAddress = new byte[2];
                 sourceAddress[1] = packet.getData(pos);
@@ -168,7 +176,10 @@ public class IEEE802154Handler extends AbstractPacketHandler {
         packet.setAttribute(PACKET_TYPE, type & 0xff);
         packet.setAttribute(PANID_COMPRESSION, panCompression);
 
-        //    System.out.println("802.15.4 Consumed " + pos + " bytes");
+        if (DEBUG) {
+            System.out.println("802.15.4 Consumed " + pos + " bytes");
+            packet.printPacket();
+        }
         dispatch(-1, packet);
     }
 

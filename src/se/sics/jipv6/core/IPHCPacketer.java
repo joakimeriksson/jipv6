@@ -15,8 +15,8 @@ public class IPHCPacketer implements IPPacketer {
      * Values of fields within the IPHC encoding first byte
      * (C stands for compressed and I for inline)
      */
-    public final static int SICSLOWPAN_IPHC_TC_C                        = 0x10;
-    public final static int SICSLOWPAN_IPHC_FL_C                        = 0x08;
+    public final static int SICSLOWPAN_IPHC_TC_C                        = 0x08;
+    public final static int SICSLOWPAN_IPHC_FL_C                        = 0x10;
     public final static int SICSLOWPAN_IPHC_NH_C                        = 0x04;
     public final static int SICSLOWPAN_IPHC_TTL_1                       = 0x01;
     public final static int SICSLOWPAN_IPHC_TTL_64                      = 0x02;
@@ -433,12 +433,19 @@ public class IPHCPacketer implements IPPacketer {
     public int decompress(IPv6Packet packet) {
         int headerSize = 40;
 
+        if(DEBUG) {
+            System.out.printf("Packet:%02x%02x\n", packet.getData(0), packet.getData(1));
+        }
+        
         /* Handle "uncompression" */
-        int cid = (packet.getData(1) >> 7) & 0x01;
+        int cid = (packet.getData(1) & SICSLOWPAN_IPHC_CID) > 0 ? 1 : 0;
         int sci = 0;
         int dci = 0;
 
         if (cid == 1) {
+            if(DEBUG) {
+                System.out.println("CID = 1");
+            }
             sci = packet.getData(2) >> 4;
             dci = packet.getData(2) & 0x0f;
         }
@@ -712,7 +719,7 @@ public class IPHCPacketer implements IPPacketer {
                 udp.checkSum = checkSum;
                 headerSize += 8;
             } else {
-                System.out.printf("Unsupported next header compression:%02x\n",(packet.getData(iphc_ptr) & 0xFC));
+                System.out.printf("Unsupported next header compression:%02x at %d\n",(packet.getData(iphc_ptr) & 0xFC), iphc_ptr);
             }
         }
 
