@@ -213,16 +213,21 @@ public class Main {
             BufferedReader input = new BufferedReader(new FileReader(scriptFile));
             try {
                 String line;
-                int lineNo = 1;
+                int lineNo = 0;
                 int error;
                 while ((line = input.readLine()) != null) {
+                    line = line.trim();
+                    lineNo++;
+                    if (line.length() == 0 || line.startsWith("#")) {
+                        // Ignore empty lines and comments
+                        continue;
+                    }
                     if ((error = cliContext.executeCommand(line)) != 0) {
                         System.err.println("Error executing '" + line + "'");
                         System.err.println("Command returned " + error
                                 + " at line " + lineNo + " in file " + scriptFile);
                         break;
                     }
-                    lineNo++;
                 }
             } finally {
                 input.close();

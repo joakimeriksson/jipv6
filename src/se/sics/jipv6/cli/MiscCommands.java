@@ -412,16 +412,21 @@ public class MiscCommands {
                 BufferedReader input = new BufferedReader(new FileReader(scriptFile));
                 try {
                     String line;
-                    int lineNo = 1;
+                    int lineNo = 0;
                     int error;
                     while ((line = input.readLine()) != null) {
+                        lineNo++;
+                        line = line.trim();
+                        if (line.length() == 0 || line.startsWith("#")) {
+                            // Ignore empty lines and comments
+                            continue;
+                        }
                         if (isVerbose) context.out.println(line);
                         if ((error = context.executeCommand(line)) != 0) {
                             context.err.println("Error in '" + line + "'");
                             context.err.println("Command returned " + error + " at line " + lineNo + " in file " + scriptFile);
                             break;
                         }
-                        lineNo++;
                     }
                 } finally {
                     input.close();
