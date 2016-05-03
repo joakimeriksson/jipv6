@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.IllegalAnnotationError;
 import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -215,17 +216,20 @@ public abstract class CLIContext {
                 return null;
             }
             String[] args = Arrays.copyOfRange(commandList[i], 1, commandList[i].length);
-            CmdLineParser parser = new CmdLineParser(command);
+            CmdLineParser parser = null;
             try {
+                parser = new CmdLineParser(command);
                 parser.parseArgument(args);
-            } catch (CmdLineException | IllegalArgumentException e) {
+            } catch (CmdLineException | IllegalAnnotationError | IllegalArgumentException e) {
                 boolean classHasArgument = hasAnnotation(command.getClass(), Argument.class);
                 boolean classHasOptions  = hasAnnotation(command.getClass(), Option.class);
                 err.println("CLI: Error, " + e.getMessage());
                 err.println("Usage: " + commandList[i][0]
                             + (classHasOptions ? " [options]" : "")
                             + (classHasArgument ? " arguments" : ""));
-                parser.printUsage(err);
+                if (parser != null) {
+                    parser.printUsage(err);
+                }
                 return null;
             }
             cmds[i] = command;

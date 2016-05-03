@@ -84,7 +84,8 @@ public class ConsoleCLIContext extends CLIContext {
                     ((ConsolePrintStream)err).setConsoleReader(console);
                     String line;
                     while (!exit && (line = console.readLine()) != null) {
-                        if (line.length() > 0) {
+                        line = line.trim();
+                        if (line.length() > 0 && !line.startsWith("#")) {
                             executeCommand(line);
                         }
                     }
