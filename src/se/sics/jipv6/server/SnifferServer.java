@@ -89,7 +89,7 @@ public class SnifferServer extends AbstractHandler {
         response.getWriter().println("<script type=\"text/javascript\">\n");
         response.getWriter().println(RPLAnalyzer.getRPLTopology(nodeTable));
         response.getWriter().println("var data = { nodes: nodes, edges: edges };");
-        response.getWriter().println("var options = { hierarchicalLayout: true,};");
+        response.getWriter().println("var options = {};");
         response.getWriter().println("var network;");
         response.getWriter().println("$(document).ready( function() {");
         response.getWriter().println("var container = document.getElementById('network-visualization');");
