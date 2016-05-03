@@ -6,8 +6,8 @@ import java.util.HashMap;
 public class LoWPANFragmenter {
 
     private static final boolean DEBUG = false;
-    private static final int MAX_TIME = 2000; /* no longer than 2 seconds since start before packet is GC:ed */
-    class FragmentContext {
+
+    static class FragmentContext {
         int tag;
         int size;
         int receivedSize;
@@ -17,7 +17,7 @@ public class LoWPANFragmenter {
         HashMap <String, String> map = new HashMap<String, String>();
 
         FragmentContext(int tag, int size) {
-            data = new byte[size];
+            this.data = new byte[size];
             this.tag = tag;
             this.time = System.currentTimeMillis();
             this.size = size;
@@ -27,13 +27,14 @@ public class LoWPANFragmenter {
         /* copy whole packet payload to buffer */
         public boolean copyData(IPv6Packet packet, int offset) {
             int plen = packet.getPayloadLength();
-            if (map.get("" + offset + ":" + plen) == null) {
+            String key = "" + offset + ":" + plen;
+            if (map.get(key) == null) {
                 if(offset > 0) {
                     /* compensate for this offset */
                     offset = offset - firstFragmentOffset;
                 }
                 packet.copy(0, data, offset);
-                map.put("" + offset + ":" + plen, "");
+                map.put(key, "");
                 return true;
             } else {
                 if(DEBUG) System.out.println("*** already received that part");

@@ -1,7 +1,6 @@
 package se.sics.jipv6.analyzer;
 
 import java.io.PrintStream;
-import java.util.HashMap;
 
 import se.sics.jipv6.core.IPPayload;
 import se.sics.jipv6.core.IPv6ExtensionHeader;

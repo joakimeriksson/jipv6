@@ -144,8 +144,10 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 dataPacket++;
                 nodeTable.printAck = true;
                 printStart(out, packet, elapsed);
-                out.printf("UDP Message (UC/Global)");
-                out.print(" " + (responseTime > 0 ? responseTime + " " : ""));
+                out.printf("UDP Message (UC/Global) ");
+                if (responseTime > 0) {
+                    System.out.print(Long.toString(responseTime) + " ");
+                }
                 if (sourceNode != null) {
                     SleepStats sleepInfo = (SleepStats) sourceNode.properties.get("sleepInfo");
                     if (sleepInfo != null) {

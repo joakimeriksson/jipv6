@@ -47,7 +47,6 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
-import jdk.internal.org.objectweb.asm.tree.analysis.Analyzer;
 import se.sics.jipv6.core.IPHCPacketer;
 import se.sics.jipv6.core.HopByHopOption;
 import se.sics.jipv6.core.ICMP6Packet;
@@ -311,7 +310,11 @@ public class JShark {
         try {
             while (true) {
                 line = input.readLine();
-                if (line != null && line.startsWith("h:")) {
+                if (line == null) {
+                    // End of input
+                    break;
+                }
+                if (line.startsWith("h:")) {
                     /* HEX packet input */
                     byte[] data = Utils.hexconv(line.substring(2));
                     // Print this if verbose?

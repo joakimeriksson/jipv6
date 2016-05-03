@@ -27,15 +27,11 @@
  *
  * This file is part of jipv6.
  *
- * $Id: $
- *
  * -----------------------------------------------------------------
  *
  *
  * Author  : Joakim Eriksson
  * Created :  mar 2009
- * Updated : $Date:$
- *           $Revision:$
  */
 
 package se.sics.jipv6.tunnel;
@@ -83,6 +79,7 @@ public class TSPClient implements NetworkInterface {
             private String user;
             private String password;
             private boolean userLoggedIn = false;
+            private boolean isStarted = false;
 
             public TSPClient(String host) throws SocketException, UnknownHostException {
                 this(host, null, null);
@@ -96,6 +93,13 @@ public class TSPClient implements NetworkInterface {
                 serverAddr = InetAddress.getByName(host);
                 //connection.connect(serverAddr, DEFAULT_PORT);
                 receiveP = new DatagramPacket(new byte[1280], 1280);
+            }
+
+            public void start() {
+                if (this.isStarted) {
+                    return;
+                }
+                this.isStarted = true;
 
                 Runnable writer = new Runnable() {
                     public void run() {
@@ -105,6 +109,7 @@ public class TSPClient implements NetworkInterface {
                             e.printStackTrace();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
+                            Thread.currentThread().interrupt();
                         }
                     }
                 };
@@ -130,6 +135,7 @@ public class TSPClient implements NetworkInterface {
                 try {
                     TSPClient tunnel = new TSPClient(server, user, password);
                     tunnel.setIPStack(ipStack);
+                    tunnel.start();
                     tunnel.waitSetup();
                     return tunnel;
                 } catch (Exception e) {
@@ -394,10 +400,17 @@ public class TSPClient implements NetworkInterface {
                 //     System.out.println("No match");
                 //    }
                 //
+                TSPClient client = null;
                 if (args.length == 1) {
-                    new TSPClient(args[0]);
+                    client = new TSPClient(args[0]);
                 } else if (args.length == 3) {
-                    new TSPClient(args[0], args[1], args[2]);
+                    client = new TSPClient(args[0], args[1], args[2]);
+                } else {
+                    System.err.println("Usage: " + TSPClient.class.getSimpleName() + " host [user password]");
+                    System.exit(1);
+                }
+                if (client != null) {
+                    client.start();
                 }
             }
 

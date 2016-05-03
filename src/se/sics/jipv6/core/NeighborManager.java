@@ -107,8 +107,7 @@ public class NeighborManager extends TimerTask {
         ICMP6Packet p = new ICMP6Packet();
         p.targetAddress = payload.targetAddress;
         p.type = ICMP6Packet.ROUTER_ADVERTISEMENT;
-        p.flags = (packet != null ? ICMP6Packet.FLAG_SOLICITED : 0) |
-                ICMP6Packet.FLAG_OVERRIDE;
+        p.flags = ICMP6Packet.FLAG_SOLICITED | ICMP6Packet.FLAG_OVERRIDE;
 
         /* ensure that the RA is updated... */
         p.updateRA(ipStack);
@@ -117,13 +116,13 @@ public class NeighborManager extends TimerTask {
         ipp.setIPPayload(p);
         // is this ok?
         //ipp.destAddress = packet.sourceAddress;
-        ipp.destAddress = packet != null ? packet.sourceAddress : IPStack.ALL_NODES; //packet.sourceAddress;
+        ipp.destAddress = packet.sourceAddress != null ? packet.sourceAddress : IPStack.ALL_NODES;
         ipp.sourceAddress = ipStack.myLocalIPAddress;
         System.out.print("Created ICMP6 RA for ");
         IPv6Packet.printAddress(System.out, ipp.destAddress);
         System.out.print(" ");
         packet.printPacket(System.out);
 
-        ipStack.sendPacket(ipp, packet != null ? packet.netInterface : null);
+        ipStack.sendPacket(ipp, packet.netInterface);
     }
 }

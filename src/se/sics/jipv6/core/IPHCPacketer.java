@@ -42,11 +42,11 @@ public class IPHCPacketer implements IPPacketer {
 
     private static final int SICSLOWPAN_NHC_UDP_MASK                    = 0xf8;
     private static final int SICSLOWPAN_NHC_UDP_ID                      = 0xf0;
-    private static final int SICSLOWPAN_NHC_UDP_CS_P00  =                 0xf0;
-    private static final int SICSLOWPAN_NHC_UDP_CS_P01 =                  0xf1;
-    private static final int SICSLOWPAN_NHC_UDP_CS_P10 =                  0xf2;
-    private static final int SICSLOWPAN_NHC_UDP_CS_P11 =                  0xf3;
-    private static final int SICSLOWPAN_NHC_UDP_CHECKSUM_COMPR =          0x04;
+    private static final int SICSLOWPAN_NHC_UDP_CS_P00                  = 0xf0;
+    private static final int SICSLOWPAN_NHC_UDP_CS_P01                  = 0xf1;
+    private static final int SICSLOWPAN_NHC_UDP_CS_P10                  = 0xf2;
+    private static final int SICSLOWPAN_NHC_UDP_CS_P11                  = 0xf3;
+    private static final int SICSLOWPAN_NHC_UDP_CHECKSUM_COMPR          = 0x04;
 
     public final static int PROTO_UDP = 17;
     public final static int PROTO_TCP = 6;
@@ -685,7 +685,7 @@ public class IPHCPacketer implements IPPacketer {
 
         /* Next header processing - continued */
         if((packet.getData(0) & SICSLOWPAN_IPHC_NH_C) != 0) {
-            /* TODO: check if this is correct in hc-06 */
+            /* TODO: check if this is correct in IPHC */
             /* The next header is compressed, NHC is following */
             if((packet.getData(iphc_ptr) & SICSLOWPAN_NHC_UDP_MASK) == SICSLOWPAN_NHC_UDP_ID) {
                 packet.nextHeader = PROTO_UDP;
@@ -697,7 +697,12 @@ public class IPHCPacketer implements IPPacketer {
                     destPort = packet.get16(iphc_ptr + 3);
                     iphc_ptr += 5;
                     break;
+                case SICSLOWPAN_NHC_UDP_CS_P01:
+                case SICSLOWPAN_NHC_UDP_CS_P10:
                     /* TODO: ADD P01 / P10 also!!!! */
+                    System.err.println("sicslowpan uncompress_hdr: error unsupported UDP compression: "
+                            + (packet.getData(iphc_ptr) & SICSLOWPAN_NHC_UDP_CS_P11));
+                    break;
                 case SICSLOWPAN_NHC_UDP_CS_P11:
                     /* 1 byte for NHC, 1 byte for ports */
                     srcPort = SICSLOWPAN_UDP_PORT_MIN + (packet.getData(iphc_ptr + 1) >> 4);
@@ -705,7 +710,8 @@ public class IPHCPacketer implements IPPacketer {
                     iphc_ptr += 2;
                     break;
                 default:
-                    System.out.println("sicslowpan uncompress_hdr: error unsupported UDP compression\n");
+                    System.err.println("sicslowpan uncompress_hdr: error unsupported UDP compression: "
+                            + (packet.getData(iphc_ptr) & SICSLOWPAN_NHC_UDP_CS_P11));
                 }
                 if (!checksumCompressed) {
                     checkSum = ((packet.getData(iphc_ptr) & 0xff) << 8) +
