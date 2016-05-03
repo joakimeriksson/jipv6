@@ -10,6 +10,7 @@ import se.sics.jipv6.cli.StreamCLIContext;
 import se.sics.jipv6.cli.jline.ConsoleCLIContext;
 import se.sics.jipv6.pcap.PCAPPacket;
 import se.sics.jipv6.pcap.PCAPReader;
+import se.sics.jipv6.server.SnifferServerCommands;
 import se.sics.jipv6.util.SerialRadioConnection;
 import se.sics.jipv6.util.Utils;
 
@@ -87,7 +88,7 @@ public class Main {
         // Setup default values
         if (infile == null) {
             if (host == null) {
-                host = "localhost";
+//                host = "localhost";
             }
         } else if (host != null) {
             System.err.println("Error: can not both read from file and connect to serial radio.");
@@ -121,6 +122,8 @@ public class Main {
         cliContext.setPrompt("jipv6> ");
         cliContext.getEnv().put(JShark.KEY, sniff);
         cliContext.getEnv().put("analyzer", analyzer);
+
+        cli.registerAllCommands(SnifferServerCommands.class);
 
         File fp = new File(System.getProperty("user.home"));
         if (fp.isDirectory()) {
