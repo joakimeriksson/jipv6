@@ -130,18 +130,44 @@ public class MiscCommands {
             CLIContext ctx = context.getCLIContext();
             if (args.size() > 0) {
                 String aliasName = args.get(0);
-                if (args.size() == 1) {
-                    // Remove an alias
-                    ctx.removeAlias(aliasName);
+                int index = aliasName.indexOf('=');
+                context.err.println("ALIAS: " + CommandParser.toString(args.toArray(new String[0])));
+                if (index <= 0) {
+                    String[] cmds = ctx.getAlias(aliasName);
+                    if (cmds == null) {
+                        context.out.println("No alias with name \"" + aliasName + "\" found.");//
+                    } else if (isReusable) {
+                        context.out.println("alias " + aliasName + "='" + CommandParser.toString(cmds) + "'");
+                    } else {
+                        context.out.println("  " + aliasName + "=" + CommandParser.toString(cmds));
+                    }
                     return 0;
+                } else {
+                    String alias = aliasName.substring(0, index);
+                    String cmd;
+                    if (index == aliasName.length() - 1) {
+                        if (args.size() > 1) {
+                            cmd = args.get(1);
+                        } else {
+                            cmd = "";
+                        }
+                    } else {
+                        cmd = aliasName.substring(index + 1);
+                    }
+
+                    String[] cmds = CommandParser.parseLine(cmd);
+                    // Add new alias
+                    if (cmds == null || cmds.length == 0) {
+                        context.err.println("No command specified. '" + alias + "' '" + cmd + "' '" + aliasName + "'");
+                        return 1;
+                    } else if (! ctx.getCLI().hasCommand(cmds[0])) {
+                        context.err.println("Could not find the command \"" + cmds[0] + "\".");
+                        return 1;
+                    } else {
+                        ctx.addAlias(alias, cmds);
+                        return 0;
+                    }
                 }
-                // Add new alias
-                String[] a = new String[args.size() - 1];
-                for (int i = 0, n = a.length; i < n; i++) {
-                    a[i] = args.get(i + 1);
-                }
-                ctx.addAlias(aliasName, a);
-                return 0;
             }
 
             List<String> aliases = ctx.getAliases();
@@ -149,16 +175,33 @@ public class MiscCommands {
                 context.out.println("No aliases has been defined.");
                 return 0;
             }
-            context.out.println("Available aliases:");
             for (String alias : aliases) {
                 String[] cmd = ctx.getAlias(alias);
                 if (cmd == null) {
                     // Ignore
                 } else if (isReusable) {
-                    context.out.println("alias " + alias + " " + CommandParser.toString(cmd));
+                    context.out.println("alias " + alias + "='" + CommandParser.toString(cmd) + "'");
                 } else {
                     context.out.println("  " + alias + "=" + CommandParser.toString(cmd));
                 }
+            }
+            return 0;
+        }
+    }
+
+    @CLICommand(name="unalias", topic="core", description="remove an alias")
+    public static class UnaliasCommand implements Command {
+
+        @Argument(usage = "alias", metaVar="name", required=true)
+        private String aliasName;
+
+        @Override
+        public int executeCommand(CommandContext context) throws CLIException {
+            CLIContext ctx = context.getCLIContext();
+            // Remove an alias
+            if (!ctx.removeAlias(aliasName)) {
+                context.err.println("Error: could not find alias '" + aliasName + "'");
+                return 1;
             }
             return 0;
         }
@@ -311,9 +354,16 @@ public class MiscCommands {
                 BufferedReader input = new BufferedReader(new FileReader(scriptFile));
                 try {
                     String line;
+                    int lineNo = 1;
+                    int error;
                     while ((line = input.readLine()) != null) {
                         if (isVerbose) context.out.println(line);
-                        context.executeCommand(line);
+                        if ((error = context.executeCommand(line)) != 0) {
+                            context.err.println("Error in '" + line + "'");
+                            context.err.println("Command returned " + error + " at line " + lineNo + " in file " + scriptFile);
+                            break;
+                        }
+                        lineNo++;
                     }
                 } finally {
                     input.close();

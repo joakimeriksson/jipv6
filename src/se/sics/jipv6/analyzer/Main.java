@@ -1,7 +1,11 @@
 package se.sics.jipv6.analyzer;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import se.sics.jipv6.cli.CLI;
+import se.sics.jipv6.cli.CLIContext;
 import se.sics.jipv6.cli.StreamCLIContext;
 import se.sics.jipv6.cli.jline.ConsoleCLIContext;
 import se.sics.jipv6.pcap.PCAPPacket;
@@ -23,6 +27,7 @@ public class Main {
         String outfile = null;
         String analyzerName = null;
         PacketAnalyzer analyzer = null;
+        boolean useJlineFallback = false;
         String host = null;
         int port = 9999;
         int channel = -1;
@@ -105,14 +110,27 @@ public class Main {
         JShark sniff = new JShark(analyzer, System.out);
 
         CLI cli = new CLI();
-
-        if (false && "xterm".equalsIgnoreCase(System.getenv("TERM"))) {
+        CLIContext cliContext;
+        if (useJlineFallback && "xterm".equalsIgnoreCase(System.getenv("TERM"))) {
             // Special case - do not use jline2!
             System.err.println("*** fallback to simple input");
-            new StreamCLIContext(cli, System.in, System.out, System.err, "jipv6> ");
+            cliContext = new StreamCLIContext(cli, System.in, System.out, System.err);
         } else {
-            new ConsoleCLIContext(cli, "jipv6> ");
+            cliContext = new ConsoleCLIContext(cli);
         }
+        cliContext.setPrompt("jipv6> ");
+        cliContext.getEnv().put(JShark.KEY, sniff);
+        cliContext.getEnv().put("analyzer", analyzer);
+
+        File fp = new File(System.getProperty("user.home"));
+        if (fp.isDirectory()) {
+            fp = new File(fp, ".jipv6rc");
+            if (fp.canRead()) {
+                loadFile(fp, cliContext);
+            }
+        }
+
+        cliContext.start();
 
         if (infile != null) {
             System.err.println("# Reading from pcap file " + infile);
@@ -158,8 +176,15 @@ public class Main {
             sniff.setPCAPOutFile(outfile);
         }
 
-        System.err.println("# Connecting to serial radio");
-        sniff.connect(host, port);
+        if (host != null) {
+            System.err.println("# Connecting to serial radio at " + host + ":" + port);
+            sniff.connect(host, port);
+
+            SerialRadioConnection radio = sniff.getSerialRadio();
+            if (radio != null) {
+                cliContext.getEnv().put("radio", radio);
+            }
+        }
 
         // Change radio channel if specified
         if (channel >= 0) {
@@ -177,6 +202,30 @@ public class Main {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private static void loadFile(File scriptFile, CLIContext cliContext) {
+        try {
+            BufferedReader input = new BufferedReader(new FileReader(scriptFile));
+            try {
+                String line;
+                int lineNo = 1;
+                int error;
+                while ((line = input.readLine()) != null) {
+                    if ((error = cliContext.executeCommand(line)) != 0) {
+                        System.err.println("Error executing '" + line + "'");
+                        System.err.println("Command returned " + error
+                                + " at line " + lineNo + " in file " + scriptFile);
+                        break;
+                    }
+                    lineNo++;
+                }
+            } finally {
+                input.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

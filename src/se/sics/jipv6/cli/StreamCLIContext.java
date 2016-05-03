@@ -49,25 +49,17 @@ public class StreamCLIContext extends CLIContext {
 
     private BufferedReader inReader;
     private boolean exit = false;
-    private String prompt;
     private boolean isRunning;
     private boolean useWorkaround;
 
-    public StreamCLIContext(CLI cli, InputStream in, PrintStream out,
-            PrintStream err, String prompt) {
+    public StreamCLIContext(CLI cli, InputStream in, PrintStream out, PrintStream err) {
         super(cli, out, err);
-        this.prompt = prompt;
         this.inReader = new BufferedReader(new InputStreamReader(in));
-        useWorkaround = Boolean.getBoolean("cli.stream.workaround");
-        start();
+        this.useWorkaround = Boolean.getBoolean("cli.stream.workaround");
     }
 
     @Override
-    public void setPrompt(String prompt) {
-        this.prompt = prompt;
-    }
-
-    private void start() {
+    public void start() {
         if (!isRunning) {
             isRunning = true;
             new Thread(new Runnable() {

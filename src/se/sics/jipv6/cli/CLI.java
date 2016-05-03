@@ -83,6 +83,10 @@ public class CLI {
         return names;
     }
 
+    public boolean hasCommand(String cmd) {
+        return commands.get(cmd) != null;
+    }
+
     public Command getCommand(String cmd) {
         CommandInfo info = commands.get(cmd);
         if (info != null) {
@@ -133,7 +137,7 @@ public class CLI {
 
     public void registerAllCommands(Class<?> type) {
         if (Command.class.isAssignableFrom(type)) {
-            log.debug("adding {} as command", type.getName());
+            log.trace("adding {} as command", type.getName());
             if (!registerCommand(type.asSubclass(Command.class))) {
                 log.debug("failed to register as command");
             }
@@ -142,7 +146,7 @@ public class CLI {
             if (Modifier.isStatic(subClass.getModifiers())
                     && Modifier.isPublic(subClass.getModifiers())
                     && Command.class.isAssignableFrom(subClass)) {
-                log.debug("adding inner class {} as command", subClass.getName());
+                log.trace("adding inner class {} as command", subClass.getName());
                 if (!registerCommand(subClass.asSubclass(Command.class))) {
                     log.debug("failed to register as command");
                 }

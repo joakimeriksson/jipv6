@@ -53,11 +53,27 @@ public class ConsoleCLIContext extends CLIContext {
     private static final Logger log = LoggerFactory.getLogger(ConsoleCLIContext.class);
 
     private ConsoleReader console;
-    private boolean exit;
+    private boolean exit = false;
+    private boolean hasStarted = false;
 
-    public ConsoleCLIContext(CLI cli, final String prompt) {
+    public ConsoleCLIContext(CLI cli) {
         super(cli, new ConsolePrintStream(), new ConsolePrintStream());
-        this.exit = false;
+    }
+
+    @Override
+    public void setPrompt(String prompt) {
+        super.setPrompt(prompt);
+        if (console != null) {
+            console.setPrompt(prompt);
+        }
+    }
+
+    @Override
+    public void start() {
+        if (hasStarted) {
+            return;
+        }
+        hasStarted = true;
         Thread t = new Thread(new Runnable() {
             @Override public void run() {
                 try {
@@ -72,7 +88,7 @@ public class ConsoleCLIContext extends CLIContext {
                             executeCommand(line);
                         }
                     }
-                } catch(IOException e) {
+                } catch (Exception e) {
                     log.warn("CLI console input died!", e);
                 } finally {
                     try {
@@ -87,13 +103,6 @@ public class ConsoleCLIContext extends CLIContext {
         }, "cmd");
         t.setDaemon(false);
         t.start();
-    }
-
-    @Override
-    public void setPrompt(String prompt) {
-        if (console != null) {
-            console.setPrompt(prompt);
-        }
     }
 
     private static class ConsolePrintStream extends PrintStream {

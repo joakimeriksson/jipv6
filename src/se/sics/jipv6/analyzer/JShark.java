@@ -63,6 +63,8 @@ import se.sics.jipv6.util.Utils;
 public class JShark {
     /* Run JIPv6 over TUN on linux of OS-X */
 
+    public static final String KEY = "jshark";
+
     public static JShark defaultJShark;
     
     ArrayList<PacketAnalyzer> analyzers = new ArrayList<PacketAnalyzer>();

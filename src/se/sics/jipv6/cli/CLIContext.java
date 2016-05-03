@@ -50,11 +50,12 @@ public abstract class CLIContext {
 
     protected final CLI cli;
     protected final Env env;
+    protected String prompt = "> ";
 
     protected final Map<String,String[]> aliases = new ConcurrentHashMap<String,String[]>();
 
-    protected final PrintStream out;
-    protected final PrintStream err;
+    public final PrintStream out;
+    public final PrintStream err;
     private List<CommandContext[]> currentAsyncCommands = new ArrayList<CommandContext[]>();
 
     public CLIContext(CLI cli, PrintStream out, PrintStream err) {
@@ -73,6 +74,14 @@ public abstract class CLIContext {
         return env;
     }
 
+    public String getPrompt() {
+        return this.prompt;
+    }
+
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
+    }
+
     public List<String> getAliases() {
         List<String> list = new ArrayList<>();
         list.addAll(aliases.keySet());
@@ -88,11 +97,11 @@ public abstract class CLIContext {
         aliases.put(alias, commands);
     }
 
-    public void removeAlias(String alias) {
-        aliases.remove(alias);
+    public boolean removeAlias(String alias) {
+        return aliases.remove(alias) != null;
     }
 
-    public abstract void setPrompt(String prompt);
+    public abstract void start();
 
     public int executeCommand(String commandLine) {
         return executeCommand(commandLine, null);
@@ -229,8 +238,8 @@ public abstract class CLIContext {
         if (alias != null) {
             String[] tmp = Arrays.copyOf(alias, alias.length + commands.length - 1);
             System.arraycopy(commands, 1, tmp, alias.length, commands.length - 1);
-            if (log.isDebugEnabled()) {
-                log.debug("Alias: " + Arrays.toString(commands) + " => " + Arrays.toString(tmp));
+            if (log.isTraceEnabled()) {
+                log.trace("Alias: " + Arrays.toString(commands) + " => " + Arrays.toString(tmp));
             }
             commands = tmp;
         }
