@@ -222,6 +222,53 @@ public class MiscCommands {
 
     }
 
+    @CLICommand(name="set", topic="core", description="set an environment value")
+    public static class SetCommand implements Command {
+
+        @Argument(metaVar = "name=value", usage = "arguments", handler=RestOfArgumentsHandler.class)
+        private ArrayList<String> args = new ArrayList<String>();
+
+        @Override
+        public int executeCommand(CommandContext context) throws CLIException {
+            if (args.size() == 0) {
+                for (String key : context.getEnv().getAllKeys()) {
+                    String v = context.getEnv().getProperty(key);
+                    if (v != null && v.length() > 0) {
+                        context.out.println("  " + key + "=\"" + v + '"');
+                    }
+                }
+                return 0;
+            }
+            String variable = args.get(0);
+            String value;
+            int index = variable.indexOf("=");
+            if (index <= 0) {
+                Object v = context.getEnv().get(variable);
+                if (v != null && v != "") {
+                    if (v instanceof String) {
+                        context.out.println("  " + variable + "=\"" + v + "\"");
+                    } else {
+                        context.out.println("  " + variable + "=" + v);
+                    }
+                    return 0;
+                }
+                context.err.println("Error: the environment variable " + variable + " does not exist");
+                return 1;
+            }
+            if (index != variable.length() - 1) {
+                value = variable.substring(index + 1);
+            } else if (args.size() > 1) {
+                value = args.get(1);
+            } else {
+                value = "";
+            }
+            variable = variable.substring(0, index);
+            context.getEnv().setProperty(variable, value);
+            context.out.println("set " + variable + "=\"" + value + "\"");
+            return 0;
+        }
+    }
+
     @CLICommand(name="echo", topic="core", description="echo arguments")
     public static class EchoCommand implements Command {
 
