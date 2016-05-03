@@ -167,6 +167,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
         }
         sb.append("];\n");
         sb.append("var edges = [");
+        int edge = 0;
         for (Node node : nodes) {
             RPLStats stats = (RPLStats) node.properties.get("rplstats");
             if (stats != null) {
@@ -174,6 +175,8 @@ public class RPLAnalyzer implements PacketAnalyzer {
                     Node parent = nodeTable.getNodeByIP(stats.parentAddr);
                     RPLStats pStats = (RPLStats) parent.properties.get("rplstats");
                     if (pStats != null) {
+                        if (edge > 0) sb.append(',');
+                        edge++;
                         sb.append("{from:").append(stats.topologyNodeID).append(",to:").
                             append(pStats.topologyNodeID).append("}\n");
                     }

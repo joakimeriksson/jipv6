@@ -73,7 +73,10 @@ public class SnifferServer extends AbstractHandler {
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         response.setContentType("text/html; charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
-        response.getWriter().println("<h1>Super duper sniff server!</h1>");
+        response.getWriter().println("<html><head><script type=\"text/javascript\" src=\"/www/vis.js\"></script>");
+        response.getWriter().println("<script type=\"text/javascript\" src='/www/jquery-1.11.2.min.js'></script>");
+        response.getWriter().println("<link href=\"/www/vis.css\" rel=\"stylesheet\" type=\"text/css\" />");
+        response.getWriter().println("</head><body><h1>Super duper sniff server!</h1>");
         NodeTable nodeTable = sniffer.getNodeTable();
         response.getWriter().println("Number of nodes:" + nodeTable.nodeCount());
         response.getWriter().println("<h4>Node Table</h4>");
@@ -93,7 +96,7 @@ public class SnifferServer extends AbstractHandler {
         response.getWriter().println("container.innerHTML = \"\";");
         response.getWriter().println("network = new vis.Network(container, data, options);");
         response.getWriter().println("});");
-        response.getWriter().println("</script>");
+        response.getWriter().println("</script><h4>Network Topology</h4><div id=\"network-visualization\"></div></body></html>");
         baos.reset();
         baseRequest.setHandled(true);
     }
@@ -107,7 +110,6 @@ public class SnifferServer extends AbstractHandler {
                 resourceHandler.setDirectoriesListed(true);
                 resourceHandler.setResourceBase("./www");                
                 ContextHandler context = new ContextHandler("/www");
-                context.setContextPath("/www");
                 context.setHandler(resourceHandler);
 
                 ContextHandler contextSniff = new ContextHandler("/sniffer");
