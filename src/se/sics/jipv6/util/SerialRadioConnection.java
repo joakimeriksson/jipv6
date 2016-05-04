@@ -113,8 +113,8 @@ public class SerialRadioConnection implements Runnable {
                     System.out.println("Serialized atts: " + cnt);
                     for(int i = 0; i < cnt; i++) {
                         PACKET_ATTRIBUTES pa = PACKET_ATTRIBUTES.values()[payload[pos++]];
-                        int val = payload[pos++] * 256 + payload[pos++];
-                        System.out.println("Attribute: " + pa.toString() + " = " + val);
+                        int val = ((payload[pos++] & 0xff) * 256) + (payload[pos++] & 0xff);
+                        System.out.println("Attribute: " + pa.toString() + " = " + val + " (" + ((short) val) + ")");
                     }
                     if (listener != null) {
                         payload = Arrays.copyOfRange(payload, pos, payload.length);
@@ -217,7 +217,7 @@ public class SerialRadioConnection implements Runnable {
     public void setRadioPANID(int panid) throws IOException {
         byte[] data = new byte[4];
         data[0] = '!';
-        data[1] = 'p';
+        data[1] = 'P';
         data[2] = (byte)((panid >> 8) & 0xff);
         data[3] = (byte)(panid & 0xff);
         send(data);
