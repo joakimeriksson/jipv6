@@ -316,7 +316,7 @@ public class MiscCommands {
     @CLICommand(name="hexinput", topic="core", description="input a hex packet")
     public static class HexinCommand implements Command {
 
-        @Argument(usage="hexpacket", metaVar="PATTERN", required=true)
+        @Argument(usage="hexpacket", metaVar="PACKET", required=true)
         private String hexdata;
 
         @Override
@@ -329,6 +329,64 @@ public class MiscCommands {
         }
     }
 
+    @CLICommand(name="channel", topic="core", description="set channel")
+    public static class ChannelCommand implements Command {
+
+        @Argument(usage="channel", metaVar="CHANNEL", required=true)
+        private int channel;
+
+        @Override
+        public int executeCommand(CommandContext context) throws CLIException {
+            context.out.println("Set channel to:" + channel);
+            try {
+                JShark.getJShark().getSerialRadio().setRadioChannel(channel);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return 0;
+        }
+    }
+
+    @CLICommand(name="panid", topic="core", description="set channel")
+    public static class PanidCommand implements Command {
+
+        @Argument(usage="panid", metaVar="PANID", required=true)
+        private int panid;
+
+        @Override
+        public int executeCommand(CommandContext context) throws CLIException {
+            context.out.printf("Set panid to: %d 0x%04x\n", panid, panid);
+            try {
+                JShark.getJShark().getSerialRadio().setRadioPANID(panid);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return 0;
+        }
+    }
+
+    @CLICommand(name="radio_mode", topic="core", description="set channel")
+    public static class RadioModeCommand implements Command {
+
+        @Argument(usage="mode", metaVar="MODE", required=true)
+        private int mode;
+
+        @Override
+        public int executeCommand(CommandContext context) throws CLIException {
+            context.out.printf("Set mode to: %d\n", mode);
+            try {
+                JShark.getJShark().getSerialRadio().setRadioMode(mode);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return 0;
+        }
+    }
+
+    
 
     @CLICommand(name="source", topic="core", description="run script")
     public static class SourceCommand implements Command {

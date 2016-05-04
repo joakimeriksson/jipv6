@@ -16,6 +16,20 @@ public class SerialRadioConnection implements Runnable {
 
     private static boolean DEBUG = false;
 
+    enum PACKET_ATTRIBUTES {
+        NONE,
+        CHANNEL,
+        LINK_QUALITY,
+        RSSI,
+        TIMESTAMP,
+        RADIO_TXPOWER,
+        LISTEN_TIME,
+        TRANSMIT_TIME,
+        MAX_MAC_TRANSMISSIONS,
+        MAC_SEQNO,
+        MAC_ACK
+    };
+    
     private static final int SLIP_END = 0300;
     private static final int SLIP_ESC = 0333;
     private static final int SLIP_ESC_END = 0334;
@@ -92,6 +106,22 @@ public class SerialRadioConnection implements Runnable {
                 case 'C':
                     System.out.println("Radio channel is " + (int)(payload[2] & 0xff));
                     break;
+                case 'S':
+                {
+                    int cnt = payload[2];
+                    int pos = 3;
+                    System.out.println("Serialized atts: " + cnt);
+                    for(int i = 0; i < cnt; i++) {
+                        PACKET_ATTRIBUTES pa = PACKET_ATTRIBUTES.values()[payload[pos++]];
+                        int val = payload[pos++] * 256 + payload[pos++];
+                        System.out.println("Attribute: " + pa.toString() + " = " + val);
+                    }
+                    if (listener != null) {
+                        payload = Arrays.copyOfRange(payload, pos, payload.length);
+                        listener.packetReceived(payload);                        
+                    }
+                }
+                break;
                 }
             }
         } catch (ParseException e) {
@@ -181,6 +211,15 @@ public class SerialRadioConnection implements Runnable {
         data[0] = '!';
         data[1] = 'm';
         data[2] = (byte)(mode & 0xff);
+        send(data);
+    }
+
+    public void setRadioPANID(int panid) throws IOException {
+        byte[] data = new byte[4];
+        data[0] = '!';
+        data[1] = 'p';
+        data[2] = (byte)((panid >> 8) & 0xff);
+        data[3] = (byte)(panid & 0xff);
         send(data);
     }
 
