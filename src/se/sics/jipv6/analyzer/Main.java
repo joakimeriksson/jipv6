@@ -88,9 +88,9 @@ public class Main {
         // Setup default values
         if (infile == null) {
             if (host == null) {
-//                host = "localhost";
+                host = "localhost";
             }
-        } else if (host != null) {
+        } else if (host != null && !"-".equals(host)) {
             System.err.println("Error: can not both read from file and connect to serial radio.");
             usage(1);
         }
@@ -179,7 +179,7 @@ public class Main {
             sniff.setPCAPOutFile(outfile);
         }
 
-        if (host != null) {
+        if (host != null && !"-".equals(host)) {
             System.err.println("# Connecting to serial radio at " + host + ":" + port);
             sniff.connect(host, port);
 
