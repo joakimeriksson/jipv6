@@ -34,8 +34,8 @@ public interface PacketAnalyzer {
     }
 
     default public void printStart(PrintStream out, IPv6Packet packet, long elapsed) {
-        String timeStr = String.format("[%d:%02d:%02d.%03d %3d]", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
-                (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
+        String timeStr = String.format("[%d:%02d:%02d.%03d %3d] %3d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
+                (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength(), packet.getAttribute(CapturedPacket.RSSI));
         out.print(timeStr);
         out.print(" ");
         IPv6Packet.printAddress(out, packet.getSourceAddress());

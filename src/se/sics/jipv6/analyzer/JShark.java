@@ -115,8 +115,7 @@ public class JShark {
 
     public void connect(String host, int port) throws UnknownHostException, IOException {
         serialRadio = new SerialRadioConnection(new SerialRadioConnection.PacketListener() {
-            public void packetReceived(byte[] data) {
-                CapturedPacket packet = new CapturedPacket(System.currentTimeMillis(), data);
+            public void packetReceived(CapturedPacket packet) {
                 packetData(packet);
             }
         });
@@ -134,8 +133,7 @@ public class JShark {
     }
 
     public void packetData(CapturedPacket captured) {
-        MacPacket packet = new MacPacket(captured.getTimeMillis());
-        packet.setBytes(captured.getPayload());
+        MacPacket packet = new MacPacket(captured);
 
         if (pcapOutput != null) {
             try {

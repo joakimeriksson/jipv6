@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
+import se.sics.jipv6.pcap.CapturedPacket;
 import se.sics.jipv6.yal.Encap;
 import se.sics.jipv6.yal.ParseException;
 
@@ -27,7 +28,7 @@ public class SerialRadioConnection implements Runnable {
         TRANSMIT_TIME,
         MAX_MAC_TRANSMISSIONS,
         MAC_SEQNO,
-        MAC_ACK
+        MAC_ACK,
     };
     
     private static final int SLIP_END = 0300;
@@ -44,7 +45,7 @@ public class SerialRadioConnection implements Runnable {
     int pos;
 
     public interface PacketListener {
-        public void packetReceived(byte[] data);
+        public void packetReceived(CapturedPacket packet);
     }
 
     PacketListener listener;
@@ -100,7 +101,7 @@ public class SerialRadioConnection implements Runnable {
                     // Sniffer data
                     if (listener != null) {
                         payload = Arrays.copyOfRange(payload, 2, payload.length);
-                        listener.packetReceived(payload);
+                        listener.packetReceived(new CapturedPacket(System.currentTimeMillis(), payload));
                     }
                     break;
                 case 'C':
@@ -110,15 +111,20 @@ public class SerialRadioConnection implements Runnable {
                 {
                     int cnt = payload[2];
                     int pos = 3;
-                    System.out.println("Serialized atts: " + cnt);
+                    int attno = 0;
+                    int attrs[] = new int[PACKET_ATTRIBUTES.values().length];
                     for(int i = 0; i < cnt; i++) {
-                        PACKET_ATTRIBUTES pa = PACKET_ATTRIBUTES.values()[payload[pos++]];
+                        PACKET_ATTRIBUTES pa = PACKET_ATTRIBUTES.values()[attno = payload[pos++]];
                         int val = ((payload[pos++] & 0xff) * 256) + (payload[pos++] & 0xff);
-                        System.out.println("Attribute: " + pa.toString() + " = " + val + " (" + ((short) val) + ")");
+                        //System.out.println("Attribute: " + pa.toString() + " = " + val + " (" + ((byte) val) + ")");
+                        attrs[attno] = val;
                     }
                     if (listener != null) {
+                        long timeMillis = System.currentTimeMillis();
                         payload = Arrays.copyOfRange(payload, pos, payload.length);
-                        listener.packetReceived(payload);                        
+                        CapturedPacket p = new CapturedPacket(timeMillis, payload);
+                        p.setAttribute(CapturedPacket.RSSI, new Byte((byte) attrs[PACKET_ATTRIBUTES.RSSI.ordinal()]));
+                        listener.packetReceived(p);
                     }
                 }
                 break;

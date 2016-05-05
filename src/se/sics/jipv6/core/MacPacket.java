@@ -41,13 +41,15 @@
 package se.sics.jipv6.core;
 import java.util.Hashtable;
 
+import se.sics.jipv6.pcap.CapturedPacket;
+
 public class MacPacket {
 
     public static final String LL_SOURCE = "link.source";
     public static final String LL_DESTINATION = "link.destination";
 
-    protected Hashtable<String, Object> attributes = new Hashtable<String, Object>();
-
+    protected Hashtable<String, Object> attributes;
+    
     private final long timeMillis;
 
     /* this is the packet data array */
@@ -55,8 +57,15 @@ public class MacPacket {
     /* current position of packet data cursor */
     int currentPos = 0;
 
+    public MacPacket(CapturedPacket p) {
+        this.timeMillis = p.getTimeMillis();
+        this.packetData = p.getPayload();
+        this.attributes = p.getAttributes();
+    }
+    
     public MacPacket(long time) {
         this.timeMillis = time;
+        this.attributes = new Hashtable<String, Object>();
     }
 
     public long getTimeMillis() {
