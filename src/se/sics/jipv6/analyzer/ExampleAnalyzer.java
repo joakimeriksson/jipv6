@@ -15,6 +15,8 @@ public class ExampleAnalyzer implements PacketAnalyzer {
 
     private static final boolean DEBUG = false;
 
+    private static final boolean printPayload = true; /* Print UDP payload */
+
     private int dataPacket;
     private int sleepPacket;
     private int nsPacket;
@@ -164,6 +166,17 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                         } else {
                             out.printf(" Sleepy Node. Long Time since report: %d avg: %f ",
                                     elapsedTime, sleepInfo.avgReport2ResponseTime);
+                        }
+                    }
+                }
+                /* Print the payload of all packets as a String*/
+                if (printPayload) {
+                    out.print(" ");
+                    for (int i = 0; i < data.length; i++) {
+                        if(data[i] < ' ') {
+                            out.printf(".");
+                        } else {
+                            out.printf("%c", (char) data[i]);
                         }
                     }
                 }
