@@ -211,6 +211,15 @@ public class SerialRadioConnection implements Runnable {
         data[2] = (byte)(channel & 0xff);
         send(data);
     }
+    
+    public void setSnifferFormat(int format) throws IOException {
+        byte[] data = new byte[4];
+        data[0] = '!';
+        data[1] = 'f';
+        data[2] = 's';
+        data[3] = (byte)(format & 0xff);
+        send(data);
+    }
 
     public void setRadioMode(int mode) throws IOException {
         byte[] data = new byte[3];

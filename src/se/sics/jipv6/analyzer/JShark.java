@@ -126,6 +126,7 @@ public class JShark {
         }
         // Set radio in sniff mode
         serialRadio.setRadioMode(2);
+        serialRadio.setSnifferFormat(1);
     }
 
     public SerialRadioConnection getSerialRadio() {
