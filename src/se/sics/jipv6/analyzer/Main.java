@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import se.sics.jipv6.cli.CLI;
 import se.sics.jipv6.cli.CLIContext;
+import se.sics.jipv6.cli.PacketCommands;
 import se.sics.jipv6.cli.StreamCLIContext;
 import se.sics.jipv6.cli.jline.ConsoleCLIContext;
 import se.sics.jipv6.pcap.PCAPPacket;
@@ -124,7 +125,8 @@ public class Main {
         cliContext.getEnv().put("analyzer", analyzer);
 
         cli.registerAllCommands(SnifferServerCommands.class);
-
+        cli.registerAllCommands(PacketCommands.class);
+        
         File fp = new File(System.getProperty("user.home"));
         if (fp.isDirectory()) {
             fp = new File(fp, ".jipv6rc");
@@ -196,8 +198,6 @@ public class Main {
                 radio.setRadioChannel(channel);
             }
         }
-
-//        sniff.runCLI();
 
         for (;;) {
             try {

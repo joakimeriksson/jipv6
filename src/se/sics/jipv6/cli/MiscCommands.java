@@ -360,22 +360,6 @@ public class MiscCommands {
         }
     };
 
-    @CLICommand(name="hexinput", topic="core", description="input a hex packet")
-    public static class HexinCommand implements Command {
-
-        @Argument(usage="hexpacket", metaVar="PACKET", required=true)
-        private String hexdata;
-
-        @Override
-        public int executeCommand(CommandContext context) throws CLIException {
-            context.out.println("Receive:" + hexdata);
-            byte[] packetData = Utils.hexconv(hexdata);
-            CapturedPacket packet = new CapturedPacket(System.currentTimeMillis(), packetData);
-            JShark.getJShark().packetData(packet);
-            return 0;
-        }
-    }
-
     @CLICommand(name="channel", topic="core", description="set channel")
     public static class ChannelCommand implements Command {
 

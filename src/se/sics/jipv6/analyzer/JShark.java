@@ -57,6 +57,7 @@ import se.sics.jipv6.core.UDPPacket;
 import se.sics.jipv6.mac.IEEE802154Handler;
 import se.sics.jipv6.pcap.CapturedPacket;
 import se.sics.jipv6.pcap.PCAPWriter;
+import se.sics.jipv6.util.PacketStore;
 import se.sics.jipv6.util.SerialRadioConnection;
 import se.sics.jipv6.util.Utils;
 
@@ -71,6 +72,9 @@ public class JShark {
     IEEE802154Handler i154Handler;
     IPHCPacketer iphcPacketer;
     SerialRadioConnection serialRadio;
+    
+    private boolean storePackets = false;
+    private PacketStore packetStore = new PacketStore();
 
     NodeTable nodeTable = new NodeTable();
     private PCAPWriter pcapOutput;
@@ -115,7 +119,11 @@ public class JShark {
 
     public void connect(String host, int port) throws UnknownHostException, IOException {
         serialRadio = new SerialRadioConnection(new SerialRadioConnection.PacketListener() {
+
             public void packetReceived(CapturedPacket packet) {
+                if(storePackets) {
+                    packetStore.storePacket(packet);
+                }
                 packetData(packet);
             }
         });
@@ -129,6 +137,18 @@ public class JShark {
         serialRadio.setSnifferFormat(1);
     }
 
+    public void setStorePackets(boolean b) {
+        storePackets = b;
+    }
+
+    public boolean isStoringPackets() {
+        return storePackets;
+    }
+
+    public PacketStore getPacketStore() {
+        return packetStore;
+    }
+    
     public SerialRadioConnection getSerialRadio() {
         return this.serialRadio;
     }
@@ -274,111 +294,6 @@ public class JShark {
         this.pcapOutput.setAddingCRC(true);
     }
 
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
-    IllegalAccessException, UnknownHostException, IOException {
-        PacketAnalyzer analyzer = null;
-        if (args.length > 0) {
-            if ("help".equals(args[0]) || "-h".equals(args[0])) {
-                System.out.println("Usage: " + JShark.class.getSimpleName() + " [packetanalyzer] [host]");
-                System.exit(0);
-            }
-            Class<?> paClass = Class.forName(args[0]);
-            analyzer = (PacketAnalyzer) paClass.newInstance();
-        } else {
-            String analyserClassName = getJarManifestProperty("DefaultPacketAnalyzer");
-            if (analyserClassName != null) {
-                System.out.println("Using analyzer " + analyserClassName);
-                Class<?> paClass = Class.forName(analyserClassName);
-                analyzer = (PacketAnalyzer) paClass.newInstance();
-            }
-        }
-        if (analyzer == null) {
-            analyzer = new ExampleAnalyzer();
-        }
-        JShark sniff = new JShark(analyzer, System.out);
-        if(args.length > 1) {
-            sniff.connect(args[1]);
-        } else {
-            sniff.connect("localhost");
-        }
-        sniff.runCLI();
-    }
-
-    public void runCLI() {
-        /* NOTE: supports input of HEX packets via h:.... other than that is commands */
-        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-        String line;
-        try {
-            while (true) {
-                line = input.readLine();
-                if (line == null) {
-                    // End of input
-                    break;
-                }
-                if (line.startsWith("h:")) {
-                    /* HEX packet input */
-                    byte[] data = Utils.hexconv(line.substring(2));
-                    // Print this if verbose?
-                    //                    System.out.printf("Got packet of %d bytes\n", data.length);
-                    //                    System.out.println(line);
-                    CapturedPacket packet = new CapturedPacket(System.currentTimeMillis(), data);
-                    this.packetData(packet);
-                } else {
-                    /* Handle some very basic commands - needs improvement - steal from MSPSim soon?! */
-                    if (line.startsWith("set ")) {
-                        String parts[] = line.split(" ");
-                        if (parts.length > 2 ) {
-                            if ("channel".equals(parts[1])) {
-                                try {
-                                    int ch = Utils.decodeInt(parts[2]);
-                                    this.serialRadio.setRadioChannel(ch);
-                                } catch (Exception e) {
-                                    System.out.println("Failed setting channel to " + parts[2]);
-                                }
-                            } else {
-                                System.out.println("Unhandled set command: " + line);
-                            }
-                        } else {
-                            System.out.println("Set needs parameter and value: " + line);
-                        }
-                    } else if (line.startsWith("get ")) {
-                        String parts[] = line.split(" ");
-                        if (parts.length > 1 ) {
-                            if ("channel".equals(parts[1])) {
-                                byte[] data = new byte[2];
-                                data[0] = '?';
-                                data[1] = 'C';
-                                this.serialRadio.send(data);
-                            } else {
-                                System.out.println("Unhandled get command: " + line);
-                            }
-                        } else {
-                            System.out.println("Set needs parameter and value: " + line);
-                        }
-
-                    } else if (line.startsWith("print ")) {
-                        String parts[] = line.split(" ");
-                        if (parts.length > 1) {
-                            if ("nodes".equals(parts[1])) {
-                                this.nodeTable.print(new PrintWriter(System.out));
-                            } else if ("stats".equals(parts[1])) {
-                                for(PacketAnalyzer analyzer: analyzers) {
-                                    analyzer.print();
-                                }
-                            }
-                        }
-                    } else if (line.equals("q") || line.equals("quit")) {
-                        System.err.println("Exiting...");
-                        System.exit(0);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
     static String getJarManifestProperty(String property) {
         Class<?> C = new Object() { }.getClass().getEnclosingClass();
         String retval = null;
@@ -406,5 +321,4 @@ public class JShark {
         }
         return retval;
     }
-
 }
