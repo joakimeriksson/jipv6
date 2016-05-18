@@ -1,6 +1,6 @@
-package se.sics.jipv6.yal;
+package se.sics.jipv6.sparrow;
 
-import se.sics.jipv6.yal.Encap.Error;
+import se.sics.jipv6.sparrow.Encap.Error;
 
 public class ParseException extends Exception {
 

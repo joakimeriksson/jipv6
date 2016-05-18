@@ -30,7 +30,7 @@
  *
  */
 
-package se.sics.jipv6.yal;
+package se.sics.jipv6.sparrow;
 
 import java.util.Arrays;
 import java.util.zip.CRC32;

@@ -10,8 +10,8 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 
 import se.sics.jipv6.pcap.CapturedPacket;
-import se.sics.jipv6.yal.Encap;
-import se.sics.jipv6.yal.ParseException;
+import se.sics.jipv6.sparrow.Encap;
+import se.sics.jipv6.sparrow.ParseException;
 
 public class SerialRadioConnection implements Runnable {
 
