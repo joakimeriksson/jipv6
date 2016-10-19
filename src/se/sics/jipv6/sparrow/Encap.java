@@ -109,6 +109,61 @@ public class Encap {
         return data;
     }
 
+    public static boolean isValidEncap(byte[] data) {
+        if (data == null || data.length < 4) {
+            return false;
+        }
+
+        int padding = data[0] & 0xf;
+        int offset = 4;
+        int optLen = 0;
+        boolean crcEnabled = false;
+
+        PayloadType payloadType = PayloadType.getByType(data[1] & 0xff);
+        if (payloadType == null) {
+            return false;
+        }
+
+        FingerPrintMode fingerPrintMode = FingerPrintMode.getByMode((data[3] >> 4) & 0xf);
+        if (fingerPrintMode == null) {
+            return false;
+        }
+        offset += fingerPrintMode.getSize();
+        if (offset >= data.length) {
+            return false;
+        }
+        if(fingerPrintMode == FingerPrintMode.LENOPT) {
+            int optLenOption = data[5] & 0xff;
+            if ((optLenOption == LENOPT_OPTION_CRC) || (optLenOption == LENOPT_OPTION_SEQNO_CRC)) {
+                padding += 4;
+                crcEnabled = true;
+            }
+            optLen = ((data[6] & 0xff) << 8) + (data[7] & 0xff);
+        }
+
+        IVMode initVectorMode = IVMode.getByMode(data[3] & 0xf);
+        if (initVectorMode == null) {
+            return false;
+        }
+        offset += initVectorMode.getSize();
+
+        if (offset + optLen + padding > data.length) {
+            return false;
+        }
+
+        if (crcEnabled) {
+            CRC32 crc = new CRC32();
+            crc.update(data, 0, data.length - 4);
+            long crcV = ((data[data.length - 1] & 0xffL) << 24) + ((data[data.length - 2] & 0xff) << 16) +
+                    ((data[data.length - 3] & 0xff) << 8) + (data[data.length - 4] & 0xff);
+            if (crc.getValue() != crcV) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public static Encap parseEncap(byte[] data) throws ParseException {
         if (data == null || data.length < 4) {
             throw new ParseException("too short data: " + (data == null ? 0 : data.length)
