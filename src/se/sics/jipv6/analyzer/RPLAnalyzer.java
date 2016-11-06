@@ -75,7 +75,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
             }
         }
 
-        long elapsed = nodeTable.getElapsed();
+        long elapsed = nodeTable.getElapsed(packet);
         while (payload instanceof IPv6ExtensionHeader) {
             payload = ((IPv6ExtensionHeader) payload).getNext();
         }

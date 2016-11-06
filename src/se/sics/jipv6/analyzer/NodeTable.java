@@ -38,12 +38,15 @@ public class NodeTable {
         return stats;
     }
 
-
-    public long getElapsed() {
-        if (startTime == 0) {
-            startTime = System.currentTimeMillis();
+    public long getElapsed(MacPacket packet) {
+        if(packet != null) {
+            if (startTime == 0) {
+                startTime = packet.getTimeMillis();
+            }
+            return packet.getTimeMillis() - startTime;
+        } else {
+            return System.currentTimeMillis() - startTime;
         }
-        return System.currentTimeMillis() - startTime;
     }
 
     public Node getNodeByMAC(byte[] mac) {

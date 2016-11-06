@@ -41,6 +41,11 @@ public class SerialRadioConnection implements Runnable {
     private Socket socket;
     private InputStream input;
     private OutputStream output;
+    
+    private long startTime;
+    private int startSR;
+    private int lastSR;
+    private long lastTime;
 
     byte[] buffer = new byte[1000];
     int pos;
@@ -123,15 +128,20 @@ public class SerialRadioConnection implements Runnable {
                     if (listener != null) {
                         long timeMillis = System.currentTimeMillis();
                         int srTime = attrs[PACKET_ATTRIBUTES.TIMESTAMP.ordinal()];
-                        int diff = (int) ((srTime & 0xffff) - (timeMillis & 0xffff));
-                        /* assuming that SR time is just before timeMillis => if diff is negative - make
-                         * it positive...
-                         */
-                        if(diff < 0) diff = diff + 0x10000;
-                        timeDiff = timeDiff + diff - timeDiff / 10;
 
                         payload = Arrays.copyOfRange(payload, pos, payload.length);
-                        long srTimeMillis = ((timeMillis & ~0xffff) | (srTime + timeDiff) & 0xffff);
+                        if(startTime == 0) {
+                            startTime = timeMillis;
+                            startSR = srTime;
+                            lastTime = startTime;
+                            lastSR = srTime;
+                        } else {
+                            System.out.println("LastTime" + lastTime + " SR:" + srTime + " lastSR:" + lastSR);
+                            lastTime = lastTime + (srTime > lastSR ? (srTime - lastSR) : (srTime - lastSR + 0x10000));
+                            lastSR = srTime;
+                        }
+                        
+                        long srTimeMillis = lastTime;
                        // System.out.println("Time:" + srTime + " vs " + (timeMillis & 0xffff) + " Diff:" + (timeDiff / 10));
                        // System.out.println("Time Millis SR:" + srTimeMillis + " Time:" + timeMillis);
                         CapturedPacket p = new CapturedPacket(srTimeMillis, payload);

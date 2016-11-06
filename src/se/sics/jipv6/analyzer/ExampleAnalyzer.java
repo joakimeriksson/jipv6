@@ -15,7 +15,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
 
     private static final boolean DEBUG = false;
 
-    private static final boolean printPayload = true; /* Print UDP payload */
+    private static boolean printPayload = false; /* Print UDP payload */
 
     private int dataPacket;
     private int sleepPacket;
@@ -71,7 +71,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         IPPayload payload = packet.getIPPayload();
         totPacket++;
         // Take the time of first packet as start time
-        long elapsed = nodeTable.getElapsed();
+        long elapsed = nodeTable.getElapsed(packet);
         /* Unicast messages are assumed to be requests / replies */
         if (destNode != null) {
             NodeStats stats = nodeTable.getNodeStats(destNode);

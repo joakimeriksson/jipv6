@@ -26,7 +26,7 @@ public class MACAnalyzer implements PacketAnalyzer {
 
     @Override
     public void print() {
-        long elapsed = nodeTable.getElapsed();
+        long elapsed = nodeTable.getElapsed(null);
         // Use one second if less has elapsed
         if (elapsed < 1000) {
             elapsed = 1000;
@@ -51,7 +51,7 @@ public class MACAnalyzer implements PacketAnalyzer {
             Node receiver) {
         int type = packet.getAttributeAsInt("802154.type");
         bytes += packet.getTotalLength() + 5 + 1 + 2; /* Preamble + len + crc */
-        long elapsed = nodeTable.getElapsed();
+        long elapsed = nodeTable.getElapsed(packet);
         // Take the time of first packet as start time
         NodeStats stats = nodeTable.getNodeStats(sender);
         if (stats != null) {
