@@ -31,6 +31,7 @@ public class SerialRadioConnection implements Runnable {
         MAC_ACK,
     };
     
+    private static long  timeDiff;
     private static final int SLIP_END = 0300;
     private static final int SLIP_ESC = 0333;
     private static final int SLIP_ESC_END = 0334;
@@ -121,8 +122,19 @@ public class SerialRadioConnection implements Runnable {
                     }
                     if (listener != null) {
                         long timeMillis = System.currentTimeMillis();
+                        int srTime = attrs[PACKET_ATTRIBUTES.TIMESTAMP.ordinal()];
+                        int diff = (int) ((srTime & 0xffff) - (timeMillis & 0xffff));
+                        /* assuming that SR time is just before timeMillis => if diff is negative - make
+                         * it positive...
+                         */
+                        if(diff < 0) diff = diff + 0x10000;
+                        timeDiff = timeDiff + diff - timeDiff / 10;
+
                         payload = Arrays.copyOfRange(payload, pos, payload.length);
-                        CapturedPacket p = new CapturedPacket(timeMillis, payload);
+                        long srTimeMillis = ((timeMillis & ~0xffff) | (srTime + timeDiff) & 0xffff);
+                       // System.out.println("Time:" + srTime + " vs " + (timeMillis & 0xffff) + " Diff:" + (timeDiff / 10));
+                       // System.out.println("Time Millis SR:" + srTimeMillis + " Time:" + timeMillis);
+                        CapturedPacket p = new CapturedPacket(srTimeMillis, payload);
                         p.setAttribute(CapturedPacket.RSSI, new Byte((byte) attrs[PACKET_ATTRIBUTES.RSSI.ordinal()]));
                         listener.packetReceived(p);
                     }
