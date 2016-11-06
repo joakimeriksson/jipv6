@@ -136,7 +136,7 @@ public class SerialRadioConnection implements Runnable {
                             lastTime = startTime;
                             lastSR = srTime;
                         } else {
-                            System.out.println("LastTime" + lastTime + " SR:" + srTime + " lastSR:" + lastSR);
+//                          System.out.println("LastTime" + lastTime + " SR:" + srTime + " lastSR:" + lastSR);
                             lastTime = lastTime + (srTime > lastSR ? (srTime - lastSR) : (srTime - lastSR + 0x10000));
                             lastSR = srTime;
                         }
