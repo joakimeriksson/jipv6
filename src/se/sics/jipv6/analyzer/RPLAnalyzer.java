@@ -83,6 +83,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
         if (payload instanceof RPLPacket) {
             RPLPacket rpl = (RPLPacket) payload;
             printStart(out, packet, elapsed);
+            packet.setAttribute("color", "green");
             switch (rpl.getCode()) {
             case RPLPacket.RPL_DIS:
                 if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {

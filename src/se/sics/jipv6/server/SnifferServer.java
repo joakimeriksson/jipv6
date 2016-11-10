@@ -76,9 +76,12 @@ public class SnifferServer extends AbstractHandler {
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         response.setContentType("text/html; charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
-        response.getWriter().println("<html><head><script type=\"text/javascript\" src=\"/www/vis.js\"></script>");
+        response.getWriter().println("<html><head><script type=\"text/javascript\" src=\"/www/vis.min.js\"></script>");
         response.getWriter().println("<script type=\"text/javascript\" src='/www/jquery-1.11.2.min.js'></script>");
-        response.getWriter().println("<link href=\"/www/vis.css\" rel=\"stylesheet\" type=\"text/css\" />");
+        response.getWriter().println("<link href=\"/www/vis.min.css\" rel=\"stylesheet\" type=\"text/css\" />");
+        response.getWriter().println("<link href=\"/www/colors.css\" rel=\"stylesheet\" type=\"text/css\" />");
+        response.getWriter().println("</style>");
+
         response.getWriter().println("</head><body><h1>Super duper sniff server!</h1>");
         NodeTable nodeTable = sniffer.getNodeTable();
         response.getWriter().println("Number of nodes:" + nodeTable.nodeCount());

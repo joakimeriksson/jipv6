@@ -107,6 +107,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                 int time = (data[6] & 0xff) * 256 + (data[7] & 0xff);
                 int seq = (data[5] & 0x0f);
                 printStart(out, packet, elapsed);
+                packet.setAttribute("color", "red");
                 if((flag & 0xf) == 0x01) {
                     if (sourceNode != null) {
                         SleepStats sleepInfo = (SleepStats) sourceNode.properties.get("sleepInfo");
@@ -117,6 +118,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                     }
                     out.printf("UDP Sleep Awake in %d: Flag: %02x Dir:%s Seq:%d ",
                             time, flag, (flag & 0x80) > 0 ? "D" : "U", seq);
+                    packet.setAttribute("ip.type", "UDP S A:" + time);
                 } else if ((flag & 0xf) == 0x02) {
                     if (destNode != null) {
                         SleepStats sleepInfo = (SleepStats) destNode.properties.get("sleepInfo");
@@ -127,7 +129,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                     }
                     out.printf("UDP Sleep Report - no packet recived Flag: %02x Dir:%s Seq:%d ",
                             flag, (flag & 0x80) > 0 ? "D" : "U", seq);
-
+                    packet.setAttribute("ip.type", "UDP S NP");
                 } else if ((flag & 0xf) == 0x03) {
                     out.printf("UDP Sleep Report - packet recived Flag: %02x Dir:%s Seq: %d HoldTime: %d ",
                             flag, (flag & 0x80) > 0 ? "D" : "U", seq, time);
@@ -138,6 +140,7 @@ public class ExampleAnalyzer implements PacketAnalyzer {
                             sleepInfo.lastReportTime = packet.getTimeMillis();
                         }
                     }
+                    packet.setAttribute("ip.type", "UDP S PR");
                 } else {
                     out.println("Unknown sleep packet");
                 }

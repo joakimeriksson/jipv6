@@ -67,6 +67,7 @@ public class PacketStore {
             }
 
             if (p != null) {
+                String cstr = "";
                 llsource = (byte[]) p.getAttribute(MacPacket.LL_SOURCE);
                 if (llsource != null) {
                     llSourceStr = MacPacket.macToString(llsource);
@@ -83,7 +84,11 @@ public class PacketStore {
                 if (content == null) {
                     content = "packet-" + i;
                 }
-                buf.append("{id:" + i).append(",group:" + group).append(",content:'" + content + "'").append(",start:" + p.getTimeMillis()).append("}\n");
+                if(p.getAttribute("color") != null) {
+                    cstr = ",className:'" + p.getAttribute("color") + "'";
+                }
+                buf.append("{id:" + i).append(",group:" + group).append(",content:'" + content + "'").append(",start:" + p.getTimeMillis())
+                   .append(cstr).append("}\n");
                 lastTime = p.getTimeMillis();
             } else {
                 buf.append("{id:" + i).append(",content:'**null-packet-" + i +"'").append(",start:" + lastTime).append("}\n");
