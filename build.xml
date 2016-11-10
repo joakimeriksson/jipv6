@@ -40,6 +40,7 @@
   <target name="jipv6-all" depends="compile" description="generate an all in one JIPv6 jar file" >
     <jar jarfile="${jarfileall}" basedir="${build}">
       <zipgroupfileset dir="${lib}" includes="*.jar" />
+      <fileset file="logback.xml" />
       <manifest>
         <attribute name="Main-Class" value="${main}"/>
       </manifest>

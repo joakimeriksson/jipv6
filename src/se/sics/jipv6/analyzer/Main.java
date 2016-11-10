@@ -36,6 +36,10 @@ public class Main {
         int realtime = -1;
         int delay = -1;
 
+        if (System.getProperty("logback.configurationFile") == null) {
+            System.setProperty("logback.configurationFile", "logback.xml");
+        }
+
         for (int i = 0; i < args.length; i++) {
             String a = args[i];
             if (i + 1 < args.length) {
