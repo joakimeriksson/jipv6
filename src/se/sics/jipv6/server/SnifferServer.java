@@ -40,6 +40,7 @@ import java.io.PrintWriter;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.websocket.server.ServerContainer;
 
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
@@ -48,6 +49,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 
 import se.sics.jipv6.analyzer.ExampleAnalyzer;
 import se.sics.jipv6.analyzer.JShark;
@@ -89,14 +92,22 @@ public class SnifferServer extends AbstractHandler {
         response.getWriter().println("<script type=\"text/javascript\">\n");
         response.getWriter().println(RPLAnalyzer.getRPLTopology(nodeTable));
         response.getWriter().println("var data = { nodes: nodes, edges: edges };");
-        response.getWriter().println("var options = {};");
+        response.getWriter().println("var options = {stack: false,margin: {item: 10,axis: 5}};");
         response.getWriter().println("var network;");
         response.getWriter().println("$(document).ready( function() {");
         response.getWriter().println("var container = document.getElementById('network-visualization');");
         response.getWriter().println("container.innerHTML = \"\";");
         response.getWriter().println("network = new vis.Network(container, data, options);");
+        response.getWriter().println("container = document.getElementById('timeline-visualization');");
+        response.getWriter().println(sniffer.getPacketStore().getJSPackets());
+        response.getWriter().println("var gset = new vis.DataSet(groups);");
+        response.getWriter().println("var iset = new vis.DataSet(items);");
+        response.getWriter().println("var timeline = new vis.Timeline(container, null, options);");
+        response.getWriter().println("timeline.setGroups(gset);");
+        response.getWriter().println("timeline.setItems(iset);");
         response.getWriter().println("});");
-        response.getWriter().println("</script><h4>Network Topology</h4><div id=\"network-visualization\"></div></body></html>");
+        response.getWriter().println("</script><h4>Network Topology</h4><div id=\"network-visualization\"></div>");
+        response.getWriter().println("<h4>Timeline</h4><div id=\"timeline-visualization\"><div></body></html>");
         baos.reset();
         baseRequest.setHandled(true);
     }
@@ -114,12 +125,22 @@ public class SnifferServer extends AbstractHandler {
 
                 ContextHandler contextSniff = new ContextHandler("/sniffer");
                 contextSniff.setHandler(SnifferServer.this);
+
+                ServletContextHandler servletContext = new ServletContextHandler(ServletContextHandler.SESSIONS);
+                servletContext.setContextPath("/");
                 
                 ContextHandlerCollection contexts = new ContextHandlerCollection();
-                contexts.setHandlers(new Handler[] { context, contextSniff });
+                contexts.setHandlers(new Handler[] { context, contextSniff, servletContext });
                 
                 server.setHandler(contexts);
                 try {
+                    
+                    // Initialize javax.websocket layer
+                    ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(servletContext);
+
+                    // Add WebSocket endpoint to javax.websocket layer
+                    wscontainer.addEndpoint(SnifferSocket.class);
+                    
                     System.out.println("Starting jetty web server at 8080");
                     server.start();
                     server.join();

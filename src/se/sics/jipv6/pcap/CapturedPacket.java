@@ -20,6 +20,10 @@ public class CapturedPacket {
         attributes.put(name, value);
     }
     
+    public Object getAttribute(String name) {
+        return attributes.get(name);
+    }
+    
     public long getTimeMillis() {
         return timeMillis;
     }

@@ -59,7 +59,6 @@ import se.sics.jipv6.pcap.CapturedPacket;
 import se.sics.jipv6.pcap.PCAPWriter;
 import se.sics.jipv6.util.PacketStore;
 import se.sics.jipv6.util.SerialRadioConnection;
-import se.sics.jipv6.util.Utils;
 
 public class JShark {
     /* Run JIPv6 over TUN on linux of OS-X */
@@ -78,8 +77,7 @@ public class JShark {
 
     NodeTable nodeTable = new NodeTable();
     private PCAPWriter pcapOutput;
-    private PrintStream out;
-    
+
     public JShark(PacketAnalyzer a, PrintStream out) {
         analyzers.add(new MACAnalyzer());
         analyzers.add(new RPLAnalyzer());
@@ -87,7 +85,6 @@ public class JShark {
         i154Handler = new IEEE802154Handler();
         iphcPacketer = new IPHCPacketer();
         iphcPacketer.setContext(0, 0xaaaa0000, 0, 0, 0);
-        this.out = out;
         setOut(out);
         if (defaultJShark == null) {
             defaultJShark = this;
@@ -105,7 +102,6 @@ public class JShark {
     }
     
     public void setPrintStream(PrintStream out) {
-        this.out = out;
         setOut(out);
     }
     
@@ -208,6 +204,7 @@ public class JShark {
                 boolean more = true;
                 byte nextHeader = ipPacket.getNextHeader();
                 IPv6ExtensionHeader extHeader = null;
+                packet.setAttribute("ip.packet", ipPacket);
                 while(more) {
                     //                System.out.printf("Next Header: %d pos:%d\n", nextHeader, ipPacket.getPos());
                     //                ipPacket.printPayload();
@@ -228,6 +225,7 @@ public class JShark {
                             UDPPacket udpPacket = new UDPPacket();
                             try {
                                 udpPacket.parsePacketData(ipPacket);
+                                packet.setAttribute("ip.type", "UDP");
                             } catch (Exception e) {
                                 System.out.println("Failed to parse UDP packet:");
                                 ipPacket.printPacket();
@@ -246,6 +244,7 @@ public class JShark {
                         break;
                     case ICMP6Packet.DISPATCH:
                         ICMP6Packet icmp6Packet = ICMP6Packet.parseICMP6Packet(ipPacket);
+                        packet.setAttribute("ip.type", "ICMPv6");
                         if (extHeader != null) {
                             extHeader.setNext(icmp6Packet);
                         } else {

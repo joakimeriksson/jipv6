@@ -102,6 +102,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
                         stats.mcDIS++;
                     }
                 }
+                packet.setAttribute("ip.type", "RPL-DIS");
                 break;
             case RPLPacket.RPL_DIO:
                 dioPacket++;
@@ -118,6 +119,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
                         stats.rplRank = rpl.rank;
                     }
                 }
+                packet.setAttribute("ip.type", "RPL-DIO");
                 break;
             case RPLPacket.RPL_DAO:
                 daoPacket++;
@@ -128,6 +130,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
                     stats.DAO++;
                     stats.parentAddr = packet.getDestinationAddress();
                 }
+                packet.setAttribute("ip.type", "RPL-DAO");
                 break;
             case RPLPacket.RPL_DAO_ACK:
                 nodeTable.printAck = true;
@@ -135,6 +138,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
                 if (stats != null) {
                     stats.DAO_ACK++;
                 }
+                packet.setAttribute("ip.type", "RPL-DAO_ACK");
                 break;
             }
         }
