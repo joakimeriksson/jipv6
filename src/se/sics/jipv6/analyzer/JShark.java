@@ -117,9 +117,6 @@ public class JShark {
         serialRadio = new SerialRadioConnection(new SerialRadioConnection.PacketListener() {
 
             public void packetReceived(CapturedPacket packet) {
-                if(storePackets) {
-                    packetStore.storePacket(packet);
-                }
                 packetData(packet);
             }
         });
@@ -151,6 +148,10 @@ public class JShark {
 
     public void packetData(CapturedPacket captured) {
         MacPacket packet = new MacPacket(captured);
+
+        if (storePackets) {
+            packetStore.storePacket(captured);
+        }
 
         if (pcapOutput != null) {
             try {
