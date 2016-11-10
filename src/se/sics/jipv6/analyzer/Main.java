@@ -35,6 +35,7 @@ public class Main {
         int channel = -1;
         int realtime = -1;
         int delay = -1;
+        boolean storePackets = false;
 
         if (System.getProperty("logback.configurationFile") == null) {
             System.setProperty("logback.configurationFile", "logback.xml");
@@ -83,6 +84,10 @@ public class Main {
                     continue;
                 }
             }
+            if (a.equals("-s")) {
+                storePackets = true;
+                continue;
+            }
             if (a.equals("-h") || a.equals("--help")) {
                 usage(0);
             }
@@ -114,6 +119,9 @@ public class Main {
         }
 
         JShark sniff = new JShark(analyzer, System.out);
+        if (storePackets) {
+            sniff.setStorePackets(true);
+        }
 
         CLI cli = new CLI();
         CLIContext cliContext;
@@ -130,7 +138,7 @@ public class Main {
 
         cli.registerAllCommands(SnifferServerCommands.class);
         cli.registerAllCommands(PacketCommands.class);
-        
+
         File fp = new File(System.getProperty("user.home"));
         if (fp.isDirectory()) {
             fp = new File(fp, ".jipv6rc");
