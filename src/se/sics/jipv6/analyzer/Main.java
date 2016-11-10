@@ -11,6 +11,7 @@ import se.sics.jipv6.cli.StreamCLIContext;
 import se.sics.jipv6.cli.jline.ConsoleCLIContext;
 import se.sics.jipv6.pcap.PCAPPacket;
 import se.sics.jipv6.pcap.PCAPReader;
+import se.sics.jipv6.server.SnifferServer;
 import se.sics.jipv6.server.SnifferServerCommands;
 import se.sics.jipv6.util.SerialRadioConnection;
 import se.sics.jipv6.util.Utils;
@@ -20,7 +21,7 @@ public class Main {
     private static final boolean DEBUG = false;
 
     private static void usage(int status) {
-        System.out.println("Usage: jipv6 [-f file-to-read] [-o file-to-write] [-a host] [-p host-port] [-z analyzer] [-t timing] [-c channel]");
+        System.out.println("Usage: jipv6 [-s] [-ws] [-f file-to-read] [-o file-to-write] [-a host] [-p host-port] [-z analyzer] [-t timing] [-c channel]");
         System.exit(status);
     }
 
@@ -36,6 +37,7 @@ public class Main {
         int realtime = -1;
         int delay = -1;
         boolean storePackets = false;
+        boolean startWS = false;
 
         if (System.getProperty("logback.configurationFile") == null) {
             System.setProperty("logback.configurationFile", "logback.xml");
@@ -86,6 +88,10 @@ public class Main {
             }
             if (a.equals("-s")) {
                 storePackets = true;
+                continue;
+            }
+            if (a.equals("-ws")) {
+                startWS = true;
                 continue;
             }
             if (a.equals("-h") || a.equals("--help")) {
@@ -145,6 +151,12 @@ public class Main {
             if (fp.canRead()) {
                 loadFile(fp, cliContext);
             }
+        }
+
+        if (startWS) {
+            SnifferServer server = SnifferServer.getDefault();
+            server.setSniffer(sniff);
+            server.startWS();
         }
 
         cliContext.start();

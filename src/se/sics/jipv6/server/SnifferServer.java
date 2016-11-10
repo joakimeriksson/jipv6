@@ -51,6 +51,8 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import se.sics.jipv6.analyzer.ExampleAnalyzer;
 import se.sics.jipv6.analyzer.JShark;
@@ -59,12 +61,15 @@ import se.sics.jipv6.analyzer.RPLAnalyzer;
 
 public class SnifferServer extends AbstractHandler {
 
-    Server server;
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    PrintStream out;
-    JShark sniffer;
-    
-    public SnifferServer() {
+    private static final Logger log = LoggerFactory.getLogger(SnifferServer.class);
+
+    private Server server;
+    private ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    private PrintStream out;
+    private JShark sniffer;
+    private boolean isRunning = false;
+
+    private SnifferServer() {
         out = new PrintStream(baos);
     }
 
@@ -74,6 +79,20 @@ public class SnifferServer extends AbstractHandler {
     
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        JShark sniffer = this.sniffer;
+        if (sniffer == null) {
+            response.setContentType("text/plain;charset=utf-8");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+
+            PrintWriter responseWriter = response.getWriter();
+            try {
+                responseWriter.print("No analyzer registered!");
+                return;
+            } finally {
+                responseWriter.close();
+            }
+        }
+
         response.setContentType("text/html; charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
         response.getWriter().println("<html><head><script type=\"text/javascript\" src=\"/www/vis.min.js\"></script>");
@@ -115,7 +134,15 @@ public class SnifferServer extends AbstractHandler {
         baseRequest.setHandled(true);
     }
 
+    public boolean isRunning() {
+        return isRunning;
+    }
+
     public void startWS() {
+        if (isRunning) {
+            return;
+        }
+        isRunning = true;
         Runnable r = new Runnable() {
             public void run() {
                 server = new Server(8080);
@@ -143,13 +170,17 @@ public class SnifferServer extends AbstractHandler {
 
                     // Add WebSocket endpoint to javax.websocket layer
                     wscontainer.addEndpoint(SnifferSocket.class);
-                    
-                    System.out.println("Starting jetty web server at 8080");
+
+                    log.info("Starting jetty web server at 8080");
                     server.start();
                     server.join();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    log.error("web server error", e);
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                    log.error("web server error", e);
+                } finally {
+                    isRunning = false;
                 }
             }
         };
@@ -159,15 +190,17 @@ public class SnifferServer extends AbstractHandler {
     public void stopWS() {
         try {
             server.stop();
-        }
-        catch(Exception e) {
-            e.printStackTrace();
+        } catch(Exception e) {
+            log.warn("failed to stop webserver", e);
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static SnifferServer getDefault() {
+        return Singleton.instance;
+    }
 
-        SnifferServer s = new SnifferServer();
+    public static void main(String[] args) throws Exception {
+        SnifferServer s = SnifferServer.getDefault();
         ExampleAnalyzer analyzer = new ExampleAnalyzer();
         JShark sniff = new JShark(analyzer, s.out);
         sniff.connect("localhost");
@@ -177,5 +210,9 @@ public class SnifferServer extends AbstractHandler {
 
     public PrintStream getOutput() {
         return out;
+    }
+
+    private static class Singleton {
+        public static final SnifferServer instance = new SnifferServer();
     }
 }

@@ -39,23 +39,20 @@ import se.sics.jipv6.cli.CommandContext;
 
 public class SnifferServerCommands {
 
-    private static SnifferServer server;
-
     @CLICommand(name="webserver", topic="server", description="start web server")
     public static class WebserverCommand implements Command {
 
         @Override
         public int executeCommand(CommandContext context) throws CLIException {
-            if (server != null) {
+            SnifferServer server = SnifferServer.getDefault();
+            if (server.isRunning()) {
                 context.err.println("Web server is already running");
                 return 0;
             }
 
             JShark sniff = context.getEnv().getRequired(JShark.class, JShark.KEY);
-            SnifferServer s = new SnifferServer();
-            s.setSniffer(sniff);
-            s.startWS();
-            server = s;
+            server.setSniffer(sniff);
+            server.startWS();
             return 0;
         }
     }
