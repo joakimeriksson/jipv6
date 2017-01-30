@@ -1,7 +1,9 @@
 package se.sics.jipv6.util;
 
 import java.util.ArrayList;
+import java.util.Formatter;
 import java.util.HashMap;
+import java.util.Locale;
 
 import se.sics.jipv6.core.MacPacket;
 import se.sics.jipv6.pcap.CapturedPacket;
@@ -50,8 +52,9 @@ public class PacketStore {
      * and another items = [itemas];
      *  ??? */
     public String getJSPackets() {
-        StringBuffer buf = new StringBuffer();
-        StringBuffer groups = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
+        StringBuilder groups = new StringBuilder();
+        Formatter formatter = new Formatter(buf, Locale.US);
         HashMap<String, Integer> map = new HashMap<String, Integer>();
         byte[] llsource;
         String llSourceStr;
@@ -87,24 +90,31 @@ public class PacketStore {
                 if(p.getAttribute("color") != null) {
                     cstr = ",className:'" + p.getAttribute("color") + "'";
                 }
-                buf.append("{id:" + i).append(",group:" + group).append(",content:'" + content + "'").append(",start:" + p.getTimeMillis())
-                   .append(cstr).append("}\n");
+                buf.append("{id:" + i).append(",group:" + group).append(",content:'" + content + "'").append(",start:");
+                formatter.format("%.3f", (p.getTimeMillis() / 1000.0));
+                buf.append(cstr).append("}\n");
                 lastTime = p.getTimeMillis();
             } else {
-                buf.append("{id:" + i).append(",content:'**null-packet-" + i +"'").append(",start:" + lastTime).append("}\n");
+                buf.append("{id:" + i).append(",content:'**null-packet-" + i +"'").append(",start:");
+                formatter.format("%.3f", (lastTime / 1000.0));
+                buf.append("}\n");
             }
         }
         buf.append("];\n");
         groups.append("var groups = [");
         boolean comma = false;
+        int i = 0;
         for (String key: map.keySet()) {
+            if(i < 5) {
             if (comma)
                 groups.append(",");
-            groups.append("{id:" + map.get(key)).append(",content:'" + key + "'}");
+            groups.append("{id:" + map.get(key)).append(",content:'" + key + "'}");            
             comma = true;
+            }
+            i++;
         }
         groups.append("];\n");
-        
+        formatter.close();
         return groups.toString() + buf.toString();
     }
     

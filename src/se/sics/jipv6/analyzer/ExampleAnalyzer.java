@@ -100,7 +100,11 @@ public class ExampleAnalyzer implements PacketAnalyzer {
         }
         if (payload instanceof UDPPacket) {
             byte[] data = ((UDPPacket) payload).getPayload();
-
+            UDPPacket udp = (UDPPacket) payload;
+            if (udp.getDestinationPort() == 5683) {
+                packet.setAttribute("ip.type", "UDP:CoAP");
+                packet.setAttribute("color", "orange");
+            }
             if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
                 nodeTable.printAck = true;
                 int flag = data[4] & 0xff;
