@@ -1,5 +1,7 @@
 package se.sics.jipv6.core;
 
+import java.util.Formatter;
+
 public class IPHCPacketer implements IPPacketer {
 
     public final static int SICSLOWPAN_UDP_PORT_MIN                     = 0xF0B0;
@@ -383,10 +385,11 @@ public class IPHCPacketer implements IPPacketer {
 
         if (DEBUG) System.out.println("IPHC Header compression: size " + iphc_ptr);
         if (DEBUG) {
+            Formatter f = new Formatter(System.out);
             System.out.print("IPHC: From ");
-            IPv6Packet.printAddress(System.out, packet.sourceAddress);
+            IPv6Packet.printAddress(f, packet.sourceAddress);
             System.out.print(" to ");
-            IPv6Packet.printAddress(System.out, packet.destAddress);
+            IPv6Packet.printAddress(f, packet.destAddress);
             System.out.println();
         }
         byte[] pload;
@@ -746,13 +749,14 @@ public class IPHCPacketer implements IPPacketer {
         //        }
 
         if (DEBUG) {
+            Formatter f = new Formatter(System.out);
             System.out.println("IPv6 / IPHC packet received NH:" + packet.nextHeader);
             System.out.println("TTL: " + (packet.hopLimit & 0xff));
             System.out.print("Src Addr: ");
-            IPv6Packet.printAddress(System.out, packet.sourceAddress);
+            IPv6Packet.printAddress(f, packet.sourceAddress);
             System.out.println();
             System.out.print("Dst Addr: ");
-            IPv6Packet.printAddress(System.out, packet.destAddress);
+            IPv6Packet.printAddress(f, packet.destAddress);
             System.out.println();
         }
 

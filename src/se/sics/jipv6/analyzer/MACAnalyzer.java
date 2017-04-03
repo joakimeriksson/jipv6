@@ -1,6 +1,7 @@
 package se.sics.jipv6.analyzer;
 
 import java.io.PrintStream;
+import java.util.Formatter;
 
 import se.sics.jipv6.analyzer.NodeTable.NodeStats;
 import se.sics.jipv6.core.IPv6Packet;
@@ -22,7 +23,7 @@ public class MACAnalyzer implements PacketAnalyzer {
     private long bytes;
 
 
-    private PrintStream out;
+    private Formatter out;
 
     @Override
     public void print() {
@@ -31,12 +32,12 @@ public class MACAnalyzer implements PacketAnalyzer {
         if (elapsed < 1000) {
             elapsed = 1000;
         }
-        out.printf("MAC Analyzer: 802154: DATA:%d ACK:%d CMD:%d BEACON:%d bytes:%d bytes/sec:%d\n",
+        out.format("MAC Analyzer: 802154: DATA:%d ACK:%d CMD:%d BEACON:%d bytes:%d bytes/sec:%d\n",
                 data, ack, cmd, beacon, bytes, bytes * 1000 / elapsed);
     }
 
     @Override
-    public void init(NodeTable table, PrintStream out) {
+    public void init(NodeTable table, Formatter out) {
         this.nodeTable = table;
         this.out = out;
     }
@@ -62,7 +63,7 @@ public class MACAnalyzer implements PacketAnalyzer {
         case IEEE802154Handler.BEACONFRAME:
             printStart(out, packet, elapsed);
             beacon++;
-            out.println("Beacon Frame from:" + sender.macAddresses.get(0));
+            out.format("Beacon Frame from:" + sender.macAddresses.get(0) + "\n");
             if (stats != null) {
                 stats.beacon++;
             }
@@ -71,10 +72,10 @@ public class MACAnalyzer implements PacketAnalyzer {
             ack++;
             if (nodeTable.printAck) {
                 if(packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO) == nodeTable.lastSeqNo) {
-                    out.println(" ACKED");
+                    out.format(" ACKED\n");
                     nodeTable.printAck = false;
                 } else {
-                    out.print(" Wrong ack: " + nodeTable.lastSeqNo + " <> " + packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO));
+                    out.format(" Wrong ack: " + nodeTable.lastSeqNo + " <> " + packet.getAttributeAsInt(IEEE802154Handler.SEQ_NO));
                 }
             }
             break;
@@ -87,12 +88,12 @@ public class MACAnalyzer implements PacketAnalyzer {
             break;
         case IEEE802154Handler.CMDFRAME:
             printStart(out, packet, elapsed);
-            out.println("Beacon Request");
+            out.format("Beacon Request\n");
             cmd++;
             break;
         }
         if (nodeTable.printAck) {
-            out.println(" NO - ACK");
+            out.format(" NO - ACK\n");
         }
         nodeTable.printAck = false;
         return true;

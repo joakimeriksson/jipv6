@@ -39,13 +39,41 @@
  */
 
 package se.sics.jipv6.core;
-import java.io.PrintStream;
+import java.util.EnumSet;
+import java.util.Formatter;
 import java.util.Vector;
 
 import se.sics.jipv6.util.Utils;
 
 public class ICMP6Packet implements IPPayload {
 
+    public enum ICMPType {
+        TYPE_DESTINATION_UNREACHABLE(1),
+        TYPE_ECHO_REQUEST(128),
+        TYPE_ECHO_REPLY(129),
+        GROUP_QUERY(130),
+        GROUP_REPORT(131),
+        GROUP_REDUCTION(132),
+        ROUTER_SOLICITATION(133),
+        ROUTER_ADVERTISEMENT(134),
+        NEIGHBOR_SOLICITATION(135),
+        NEIGHBOR_ADVERTISEMENT(136);
+
+        public final int type;
+        ICMPType(int t) {
+           type = t;
+        }
+        
+        public static ICMPType getByType(int i) {
+            for (ICMPType t: EnumSet.allOf(ICMPType.class)) {
+                if(t.type == i) {
+                    return t;
+                }
+            }
+            return null;
+        }
+    }
+    
     public static final byte DISPATCH = 58;
 
     public static final int ECHO_REQUEST = 128;
@@ -177,20 +205,25 @@ public class ICMP6Packet implements IPPayload {
         echoData = edata;
     }
 
-    public void printPacket(PrintStream out) {
+    public void printPacket(Formatter out) {
         String typeS = "" + type;
-        if (type >= 128) {
-            int tS = type - 128;
-            if (tS < TYPE_NAME.length) {
-                typeS = TYPE_NAME[tS];
+        ICMPType t = ICMPType.getByType(type);
+        if (t != null) {
+            typeS = t.toString();
+        } else {
+            if (type >= 128) {
+                int tS = type - 128;
+                if (tS < TYPE_NAME.length) {
+                    typeS = TYPE_NAME[tS];
+                }
             }
         }
-        out.println("ICMPv6 Type: " + type + " (" + typeS + ") Code: " + code + " id: " +
-                id + " seq: " + seqNo);
+        out.format("ICMPv6 Type: " + type + " (" + typeS + ") Code: " + code + " id: " +
+                id + " seq: " + seqNo + "\n");
         if (targetAddress != null) {
-            out.print("ICMPv6 Target address: ");
+            out.format("ICMPv6 Target address: ");
             IPv6Packet.printAddress(out, targetAddress);
-            out.println();
+            out.format("\n");
         }
         if (type == ROUTER_ADVERTISEMENT) {
             System.out.println("ICMPv6 Route Advertisement");
@@ -203,20 +236,20 @@ public class ICMP6Packet implements IPPayload {
             byte[] prefixInfo = getOption(PREFIX_INFO);
             int bits = prefixInfo[2];
             int bytes = bits / 8;
-            out.print("RA Prefix: ");
+            out.format("RA Prefix: ");
             for (int i = 0; i < bytes; i++) {
-                out.print(Utils.hex8(prefixInfo[16 + i]));
-                if ((i & 1) == 1) out.print(":");
+                out.format(Utils.hex8(prefixInfo[16 + i]));
+                if ((i & 1) == 1) out.format(":");
             }
-            out.println("/" + bits);
-            out.println("RA Valid Lifetime: " + MacPacket.get32(prefixInfo, 4));
-            out.println("RA Pref. Lifetime: " + MacPacket.get32(prefixInfo, 8));
+            out.format("/" + bits + "\n");
+            out.format("RA Valid Lifetime: " + MacPacket.get32(prefixInfo, 4) + "\n");
+            out.format("RA Pref. Lifetime: " + MacPacket.get32(prefixInfo, 8) + "\n");
             byte[] srcLink = getOption(SOURCE_LINKADDR);
             if (srcLink != null) {
                 /* assuming 8 bytes for the mac ??? */
-                System.out.print("Source Link: ");
+                System.out.format("Source Link: ");
                 IPv6Packet.printMACAddress(out, srcLink, 2, 8);
-                System.out.println();
+                System.out.format("\n");
             }
         }
         /* ICMP can not have payload ?! */
@@ -401,7 +434,7 @@ public class ICMP6Packet implements IPPayload {
         if (packet.nextHeader == 58) {
             ICMP6Packet icmpPacket = new ICMP6Packet();
             icmpPacket.parsePacketData(packet);
-            icmpPacket.printPacket(System.out);
+            icmpPacket.printPacket(new Formatter(System.out));
         }
     }
 }

@@ -40,7 +40,7 @@
 
 package se.sics.jipv6.core;
 
-import java.io.PrintStream;
+import java.util.Formatter;
 
 /* keep the packet payload untouched ... */
 public class BytePayload implements IPPayload {
@@ -65,6 +65,6 @@ public class BytePayload implements IPPayload {
         payloadData = packet.getPayload();
     }
 
-    public void printPacket(PrintStream out) {
+    public void printPacket(Formatter out) {
     }
 }

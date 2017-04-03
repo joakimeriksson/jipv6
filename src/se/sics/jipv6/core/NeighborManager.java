@@ -40,6 +40,7 @@
 
 package se.sics.jipv6.core;
 
+import java.util.Formatter;
 import java.util.TimerTask;
 public class NeighborManager extends TimerTask {
 
@@ -119,9 +120,10 @@ public class NeighborManager extends TimerTask {
         ipp.destAddress = packet.sourceAddress != null ? packet.sourceAddress : IPStack.ALL_NODES;
         ipp.sourceAddress = ipStack.myLocalIPAddress;
         System.out.print("Created ICMP6 RA for ");
-        IPv6Packet.printAddress(System.out, ipp.destAddress);
+        Formatter f = new Formatter(System.out);
+        IPv6Packet.printAddress(f, ipp.destAddress);
         System.out.print(" ");
-        packet.printPacket(System.out);
+        packet.printPacket(f);
 
         ipStack.sendPacket(ipp, packet.netInterface);
     }

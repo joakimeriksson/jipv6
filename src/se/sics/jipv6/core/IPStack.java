@@ -42,6 +42,7 @@ package se.sics.jipv6.core;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Formatter;
 import java.util.Timer;
 import se.sics.jipv6.util.Utils;
 
@@ -180,14 +181,15 @@ public class IPStack {
             myLocalSolicited[i] = myIPAddress[i];
         }
 
+        Formatter f = new Formatter(System.out);
         System.out.print("***** Configured IP address: ");
-        IPv6Packet.printAddress(System.out, myIPAddress);
+        IPv6Packet.printAddress(f, myIPAddress);
         System.out.println();
         System.out.print("***** Configured Local IP address: ");
-        IPv6Packet.printAddress(System.out, myLocalIPAddress);
+        IPv6Packet.printAddress(f, myLocalIPAddress);
         System.out.println();
         System.out.print("***** Configured Solicited IP address: ");
-        IPv6Packet.printAddress(System.out, myLocalSolicited);
+        IPv6Packet.printAddress(f, myLocalSolicited);
         System.out.println();
     }
 
@@ -239,11 +241,12 @@ public class IPStack {
             }
         } else {
             if (DEBUG) {
+                Formatter f = new Formatter(System.out);
                 System.out.println("*** Should go out on tunnel: " + tunnel);
                 System.out.print("MyAddress: ");
-                IPv6Packet.printAddress(System.out, myIPAddress);
+                IPv6Packet.printAddress(f, myIPAddress);
                 System.out.print(", Dest: ");
-                IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
+                IPv6Packet.printAddress(f, packet.getDestinationAddress());
                 System.out.println();
             }
             if (tunnel != null && tunnel.isReady()) {
@@ -253,9 +256,11 @@ public class IPStack {
     }
 
     public void receivePacket(IPv6Packet packet) {
+        Formatter f = null;
         if (DEBUG) {
+            f = new Formatter(System.out);
             System.out.println("IPv6 packet received!");
-            packet.printPacket(System.out);
+            packet.printPacket(f);
         }
 
         if (isForMe(packet.getDestinationAddress())){
@@ -269,13 +274,14 @@ public class IPStack {
                 break;
             case UDPPacket.DISPATCH:
                 // TODO: move to IPHC compression handler... => generate raw UDP
+                if (f == null) f = new Formatter(System.out);
                 if (packet.getIPPayload() != null) {
-                    packet.getIPPayload().printPacket(System.out);
+                    packet.getIPPayload().printPacket(f);
                     udpHandler.handlePacket(packet, (UDPPacket) packet.getIPPayload());
                 } else {
                     UDPPacket p = new UDPPacket();
                     p.parsePacketData(packet);
-                    p.printPacket(System.out);
+                    p.printPacket(f);
                     packet.setIPPayload(p);
                     udpHandler.handlePacket(packet, p);
                 }
@@ -286,7 +292,8 @@ public class IPStack {
             case TCPPacket.DISPATCH:
                 TCPPacket p = new TCPPacket();
                 p.parsePacketData(packet);
-                p.printPacket(System.out);
+                if (f == null) f = new Formatter(System.out);
+                p.printPacket(f);
                 packet.setIPPayload(p);
                 tcpHandler.handlePacket(packet);
                 if (networkEventListener != null) {
@@ -302,10 +309,11 @@ public class IPStack {
             }
             /* will this work ??? */
             if (DEBUG) {
+                /* f is set if debug */
                 System.out.print("MyAddress: ");
-                IPv6Packet.printAddress(System.out, myIPAddress);
+                IPv6Packet.printAddress(f, myIPAddress);
                 System.out.print(", Dest: ");
-                IPv6Packet.printAddress(System.out, packet.getDestinationAddress());
+                IPv6Packet.printAddress(f, packet.getDestinationAddress());
                 System.out.println();
             }
             if (tunnel != null && tunnel.isReady()) {

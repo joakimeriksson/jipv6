@@ -91,12 +91,12 @@ public class PacketStore {
                     cstr = ",className:'" + p.getAttribute("color") + "'";
                 }
                 buf.append("{id:" + i).append(",group:" + group).append(",content:'" + content + "'").append(",start:");
-                formatter.format("%.3f", (p.getTimeMillis() / 1000.0));
+                formatter.format("%d", (p.getTimeMillis()));
                 buf.append(cstr).append("}\n");
                 lastTime = p.getTimeMillis();
             } else {
                 buf.append("{id:" + i).append(",content:'**null-packet-" + i +"'").append(",start:");
-                formatter.format("%.3f", (lastTime / 1000.0));
+                formatter.format("%d", (lastTime));
                 buf.append("}\n");
             }
         }

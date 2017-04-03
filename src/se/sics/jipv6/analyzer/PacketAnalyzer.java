@@ -1,6 +1,6 @@
 package se.sics.jipv6.analyzer;
 
-import java.io.PrintStream;
+import java.util.Formatter;
 
 import se.sics.jipv6.core.IPv6Packet;
 import se.sics.jipv6.core.MacPacket;
@@ -8,7 +8,7 @@ import se.sics.jipv6.pcap.CapturedPacket;
 
 public interface PacketAnalyzer {
 
-    public void init(NodeTable table, PrintStream out);
+    public void init(NodeTable table, Formatter out);
 
     /* If any analyzer returns false the packet will be "consumed" for the other analyzers */
     public boolean analyzeRawPacket(CapturedPacket packet);
@@ -19,31 +19,29 @@ public interface PacketAnalyzer {
 
     public void print();
     
-    default public void printFromTo(PrintStream out, IPv6Packet packet) {
-        out.print("from ");
+    default public void printFromTo(Formatter out, IPv6Packet packet) {
+        out.format("from ");
         IPv6Packet.printAddress(out, packet.getSourceAddress());
-        out.print(" to ");
+        out.format(" to ");
         IPv6Packet.printAddress(out, packet.getDestinationAddress());
     }
 
-    default public void printStart(PrintStream out, MacPacket packet, long elapsed) {
-        String timeStr = String.format("[%d:%02d:%02d.%03d %3d]", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
+    default public void printStart(Formatter out, MacPacket packet, long elapsed) {
+        out.format("[%d:%02d:%02d.%03d %3d] ", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
                 (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength());
-        out.print(timeStr);
-        out.print(" ");
     }
 
-    default public void printStart(PrintStream out, IPv6Packet packet, long elapsed) {
+    default public void printStart(Formatter out, IPv6Packet packet, long elapsed) {
         String timeStr = String.format("[%d:%02d:%02d.%03d %3d] %3d", elapsed / (1000 * 3600) , elapsed / (1000 * 60) % 60,
                 (elapsed / 1000) % 60, elapsed % 1000, packet.getTotalLength(), packet.getAttribute(CapturedPacket.RSSI));
-        out.print(timeStr);
-        out.print(" ");
+        out.format(timeStr);
+        out.format(" ");
         IPv6Packet.printAddress(out, packet.getSourceAddress());
-        out.printf("%c", packet.isSourceMACBased() ? '*' : '-');
-        out.print(" -> ");
+        out.format("%c", packet.isSourceMACBased() ? '*' : '-');
+        out.format(" -> ");
         IPv6Packet.printAddress(out, packet.getDestinationAddress());
-        out.printf("%c", packet.isDestinationMACBased() ? '*' : '-');
-        out.print(" ");
+        out.format("%c", packet.isDestinationMACBased() ? '*' : '-');
+        out.format(" ");
     }
 
     

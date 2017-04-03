@@ -40,6 +40,8 @@
 
 package se.sics.jipv6.core;
 import java.io.PrintStream;
+import java.util.Formatter;
+
 import se.sics.jipv6.util.Utils;
 
 public class UDPPacket implements IPPayload {
@@ -118,9 +120,9 @@ public class UDPPacket implements IPPayload {
         return DISPATCH;
     }
 
-    public void printPacket(PrintStream out) {
-        out.println("UDP Packet srcPort: " + sourcePort +
-                " destPort: " + destinationPort + " length: " + length);
+    public void printPacket(Formatter out) {
+        out.format("UDP Packet srcPort: " + sourcePort +
+                " destPort: " + destinationPort + " length: " + length + "\n");
     }
 
     public void parsePacketData(IPv6Packet packet) {

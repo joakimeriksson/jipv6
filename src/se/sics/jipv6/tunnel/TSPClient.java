@@ -42,6 +42,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Formatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -364,7 +365,7 @@ public class TSPClient implements NetworkInterface {
                 if (DEBUG) {
                     System.out.println("Sending IPv6Packet on tunnel: " + data);
                     System.out.print("Packet: ");
-                    packet.printPacket(System.out);
+                    packet.printPacket(new Formatter(System.out));
                     System.out.println();
                 }
                 try {

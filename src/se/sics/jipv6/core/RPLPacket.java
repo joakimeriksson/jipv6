@@ -1,6 +1,7 @@
 package se.sics.jipv6.core;
 
 import java.io.PrintStream;
+import java.util.Formatter;
 
 public class RPLPacket extends ICMP6Packet {
 
@@ -116,22 +117,23 @@ public class RPLPacket extends ICMP6Packet {
         return p;
     }
 
-    public void printPacket(PrintStream out) {
+    public void printPacket(Formatter out) {
         String name = "";
         if (code < RPL_NAMES.length) {
             name = RPL_NAMES[code];
         }
-        out.print("ICMP6 - RPL " + name);
+        out.format("ICMP6 - RPL " + name);
         switch (code) {
         case RPL_DIO:
-            System.out.print(" Rank: " + (rank / 128.0));
-            System.out.print(" DAG ID: ");
-            IPv6Packet.printAddress(System.out, dagID);
-            System.out.println();
+            out.format(" Rank: " + (rank / 128.0));
+            out.format(" DAG ID: ");
+            IPv6Packet.printAddress(out, dagID);
+            out.format("\n");
             break;
         case RPL_DAO:
-            System.out.print(" Seq: " + sequence + " Lifetime: " + lifetime + " Target:");
-            IPv6Packet.printAddress(System.out, targetPrefix);
+            out.format(" Seq: " + sequence + " Lifetime: " + lifetime + " Target:");
+            IPv6Packet.printAddress(out, targetPrefix);
+            out.format("\n");
             break;
         }
     }

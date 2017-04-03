@@ -39,8 +39,7 @@
  */
 
 package se.sics.jipv6.core;
-
-import java.io.PrintStream;
+import java.util.Formatter;
 
 public interface IPPayload {
 
@@ -55,5 +54,5 @@ public interface IPPayload {
      */
     public void parsePacketData(IPv6Packet packet);
 
-    public void printPacket(PrintStream out);
+    public void printPacket(Formatter out);
 }

@@ -41,6 +41,7 @@
 package se.sics.jipv6.core;
 
 import java.io.PrintStream;
+import java.util.Formatter;
 
 import se.sics.jipv6.util.Utils;
 
@@ -204,20 +205,20 @@ public class TCPPacket implements IPPayload {
     /* (non-Javadoc)
      * @see se.sics.mspsim.net.IPPayload#printPacket(java.io.PrintStream)
      */
-    public void printPacket(PrintStream out) {
-        out.print("[TCP " + sourcePort +
+    public void printPacket(Formatter out) {
+        out.format("[TCP " + sourcePort +
                 " -> " + destinationPort + " Flag: " + Utils.hex8(flags) +
                 " seq: " + Long.toString(seqNo & 0xffffL, 16) +
                 " ack: " + Long.toString(ackNo &  0xffffL, 16));
         if (payload != null) {
-            out.print("|");
+            out.format("|");
             int len = 8;
             if (payload.length < len) len = payload.length;
             for (int i = 0; i < len; i++) {
-                out.print((char) payload[i]);
+                out.format("%c",(char)payload[i]);
             }
         }
-        System.out.println("]");
+        out.format("]\n");
     }
 
     public TCPPacket replyPacket() {

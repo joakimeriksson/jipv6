@@ -36,6 +36,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Formatter;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -202,7 +203,7 @@ public class SnifferServer extends AbstractHandler {
     public static void main(String[] args) throws Exception {
         SnifferServer s = SnifferServer.getDefault();
         ExampleAnalyzer analyzer = new ExampleAnalyzer();
-        JShark sniff = new JShark(analyzer, s.out);
+        JShark sniff = new JShark(analyzer, new Formatter(s.out));
         sniff.connect("localhost");
         s.setSniffer(sniff);
         s.startWS();

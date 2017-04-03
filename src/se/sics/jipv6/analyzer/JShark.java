@@ -38,14 +38,11 @@
  */
 package se.sics.jipv6.analyzer;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Formatter;
 
 import se.sics.jipv6.core.IPHCPacketer;
 import se.sics.jipv6.core.HopByHopOption;
@@ -71,6 +68,7 @@ public class JShark {
     IEEE802154Handler i154Handler;
     IPHCPacketer iphcPacketer;
     SerialRadioConnection serialRadio;
+    Formatter out;
     
     private boolean storePackets = false;
     private PacketStore packetStore = new PacketStore();
@@ -78,7 +76,7 @@ public class JShark {
     NodeTable nodeTable = new NodeTable();
     private PCAPWriter pcapOutput;
 
-    public JShark(PacketAnalyzer a, PrintStream out) {
+    public JShark(PacketAnalyzer a, Formatter out) {
         analyzers.add(new MACAnalyzer());
         analyzers.add(new RPLAnalyzer());
         analyzers.add(a);
@@ -95,13 +93,14 @@ public class JShark {
         return defaultJShark;
     }
     
-    private void setOut(PrintStream out) {
+    private void setOut(Formatter out) {
+        this.out = out;
         for (PacketAnalyzer analyzer : analyzers) {
             analyzer.init(nodeTable, out);
         }
     }
     
-    public void setPrintStream(PrintStream out) {
+    public void setFormatter(Formatter out) {
         setOut(out);
     }
     
@@ -230,7 +229,7 @@ public class JShark {
                             } catch (Exception e) {
                                 System.out.println("Failed to parse UDP packet:");
                                 ipPacket.printPacket();
-                                ipPacket.printPacket(System.out);
+                                ipPacket.printPacket(out);
                                 throw e;
                             }
                             if (extHeader != null) {

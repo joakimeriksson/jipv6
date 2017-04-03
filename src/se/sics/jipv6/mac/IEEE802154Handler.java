@@ -253,6 +253,7 @@ public class IEEE802154Handler extends AbstractPacketHandler {
         out.print(" to " + Utils.hex16(packet.getAttributeAsInt(DESTINATION_PAN_ID)) + "/");
         printAddress(out, packet.getAttributeAsInt(DESTINATION_MODE),
                 (byte[]) packet.getAttribute(MacPacket.LL_DESTINATION));
+        out.print(" Sec:" + packet.getAttribute(SECURITY));
         out.println(" seqNo: " + packet.getAttributeAsInt(SEQ_NO) + " vers: " +
                 packet.getAttributeAsInt(VERSION) + " len: " +
                 packet.getAttributeAsInt(PAYLOAD_LEN));

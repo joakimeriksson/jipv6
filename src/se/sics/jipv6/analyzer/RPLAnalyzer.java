@@ -1,6 +1,6 @@
 package se.sics.jipv6.analyzer;
 
-import java.io.PrintStream;
+import java.util.Formatter;
 
 import se.sics.jipv6.core.IPPayload;
 import se.sics.jipv6.core.IPv6ExtensionHeader;
@@ -40,10 +40,10 @@ public class RPLAnalyzer implements PacketAnalyzer {
 
 
     private NodeTable nodeTable;
-    private PrintStream out;
+    private Formatter out;
 
     @Override
-    public void init(NodeTable table, PrintStream out) {
+    public void init(NodeTable table, Formatter out) {
         this.nodeTable = table;
         this.out = out;
     }
@@ -89,15 +89,13 @@ public class RPLAnalyzer implements PacketAnalyzer {
                 if (IPv6Packet.isLinkLocal(packet.getDestinationAddress())) {
                     /* ... */
                     nodeTable.printAck = true;
-                    out.printf("DIS - *** Probe or repair");
-                    out.print(" ");
+                    out.format("DIS - *** Probe or repair ");
                     ucDISPacket++;
                     if (stats != null) {
                         stats.ucDIS++;
                     }
                 } else {
-                    out.printf("DIS - *** Warning - broadcast DIS!!!");
-                    out.println();
+                    out.format("DIS - *** Warning - broadcast DIS!!!\n");
                     bcDISPacket++;
                     if (stats != null) {
                         stats.mcDIS++;
@@ -108,8 +106,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
             case RPLPacket.RPL_DIO:
                 dioPacket++;
                 String mCast = IPv6Packet.isLinkLocal(packet.getDestinationAddress()) ? "UC" : "MC";
-                out.printf("DIO (" + mCast + ")");
-                out.print(" ");
+                out.format("DIO (" + mCast + ") ");
                 rpl.printPacket(out);
                 if (stats != null) {
                     if ("UC".equals(mCast)) {
@@ -125,7 +122,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
             case RPLPacket.RPL_DAO:
                 daoPacket++;
                 nodeTable.printAck = true;
-                out.printf("DAO ");
+                out.format("DAO ");
                 rpl.printPacket(out);
                 if (stats != null) {
                     stats.DAO++;
@@ -135,7 +132,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
                 break;
             case RPLPacket.RPL_DAO_ACK:
                 nodeTable.printAck = true;
-                out.printf("DAO ACK");
+                out.format("DAO ACK");
                 if (stats != null) {
                     stats.DAO_ACK++;
                 }
@@ -148,7 +145,7 @@ public class RPLAnalyzer implements PacketAnalyzer {
 
     @Override
     public void print() {
-        out.println("RPL mcDIS: " + bcDISPacket + " ucDIS: " + ucDISPacket + " DIO: " + dioPacket + " DAO: " + daoPacket);
+        out.format("RPL mcDIS: " + bcDISPacket + " ucDIS: " + ucDISPacket + " DIO: " + dioPacket + " DAO: " + daoPacket + "\n");
     }
     
     public static String getRPLTopology(NodeTable nodeTable) {

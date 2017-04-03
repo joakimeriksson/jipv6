@@ -39,6 +39,8 @@
  */
 
 package se.sics.jipv6.core;
+import java.util.Formatter;
+
 import se.sics.jipv6.util.Utils;
 
 public class ICMP6PacketHandler {
@@ -61,7 +63,7 @@ public class ICMP6PacketHandler {
         icmpPacket.parsePacketData(packet);
         packet.setIPPayload(icmpPacket);
 
-        if (DEBUG) icmpPacket.printPacket(System.out);
+        if (DEBUG) icmpPacket.printPacket(new Formatter(System.out));
 
         if (listener != null) {
             if (listener.ICMP6PacketReceived(packet))

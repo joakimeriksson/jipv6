@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Formatter;
+
 import se.sics.jipv6.cli.CLI;
 import se.sics.jipv6.cli.CLIContext;
 import se.sics.jipv6.cli.PacketCommands;
@@ -124,7 +126,7 @@ public class Main {
             usage(1);
         }
 
-        JShark sniff = new JShark(analyzer, System.out);
+        JShark sniff = new JShark(analyzer, new Formatter(System.out));
         if (storePackets) {
             sniff.setStorePackets(true);
         }

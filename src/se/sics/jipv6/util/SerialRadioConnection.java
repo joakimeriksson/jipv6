@@ -144,7 +144,8 @@ public class SerialRadioConnection implements Runnable {
                         long srTimeMillis = lastTime;
                        // System.out.println("Time:" + srTime + " vs " + (timeMillis & 0xffff) + " Diff:" + (timeDiff / 10));
                        // System.out.println("Time Millis SR:" + srTimeMillis + " Time:" + timeMillis);
-                        CapturedPacket p = new CapturedPacket(srTimeMillis, payload);
+                        CapturedPacket p = new CapturedPacket(System.currentTimeMillis(), payload); //srTimeMillis, payload);
+                        
                         p.setAttribute(CapturedPacket.RSSI, new Byte((byte) attrs[PACKET_ATTRIBUTES.RSSI.ordinal()]));
                         listener.packetReceived(p);
                     }

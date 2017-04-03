@@ -43,6 +43,7 @@ package se.sics.jipv6.core;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Formatter;
 
 import se.sics.jipv6.util.Utils;
 
@@ -172,7 +173,7 @@ public class TCPConnection {
             sendNext++;
         }
         lastSendTime = System.currentTimeMillis();
-        tcpPacket.printPacket(System.out);
+        tcpPacket.printPacket(new Formatter(System.out));
         ipStack.sendPacket(packet, netInterface);
     }
 
@@ -243,7 +244,7 @@ public class TCPConnection {
         IPv6Packet packet = new IPv6Packet(tcpPacket, localIP, externalIP);
         tcpPacket.seqNo = sentUnack;
         lastSendTime = System.currentTimeMillis();
-        tcpPacket.printPacket(System.out);
+        tcpPacket.printPacket(new Formatter(System.out));
         ipStack.sendPacket(packet, netInterface);
     }
 

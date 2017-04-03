@@ -39,7 +39,7 @@
  */
 
 package se.sics.jipv6.core;
-import java.io.PrintStream;
+import java.util.Formatter;
 
 import se.sics.jipv6.util.Utils;
 
@@ -172,12 +172,12 @@ public class IPv6Packet extends MacPacket implements IPPacketer {
         destAddress = addr;
     }
 
-    public void printPacket(PrintStream out) {
-        out.print("IPv6: from ");
+    public void printPacket(Formatter out) {
+        out.format("IPv6: from ");
         printAddress(out, sourceAddress);
-        out.print(" to ");
+        out.format(" to ");
         printAddress(out, destAddress);
-        out.println(" NxHdr: " + nextHeader);
+        out.format(" NxHdr: " + nextHeader + "\n");
     }
 
     public static String addressToString(byte[] address) {
@@ -191,11 +191,11 @@ public class IPv6Packet extends MacPacket implements IPPacketer {
         return str.toString();
     }
 
-    public static void printAddress(PrintStream out, byte[] address) {
+    public static void printAddress(Formatter out, byte[] address) {
         for (int i = 0; i < 16; i+=2) {
-            out.print(Utils.hex16((((address[i] & 0xff) << 8) | (address[i + 1] & 0xff))));
+            out.format(Utils.hex16((((address[i] & 0xff) << 8) | (address[i + 1] & 0xff))));
             if (i < 14) {
-                out.print(":");
+                out.format(":");
             }
         }
     }
@@ -344,12 +344,12 @@ public class IPv6Packet extends MacPacket implements IPPacketer {
         nextHeader = ipp.getDispatch();
     }
 
-    public static void printMACAddress(PrintStream out, byte[] data,
+    public static void printMACAddress(Formatter out, byte[] data,
             int pos, int size) {
         for (int i = 0; i < size; i++) {
-            out.print(Utils.hex8(data[i + pos]));
+            out.format(Utils.hex8(data[i + pos]));
             if (i < size - 1)
-                out.print(":");
+                out.format(":");
         }
     }
 
@@ -391,11 +391,21 @@ public class IPv6Packet extends MacPacket implements IPPacketer {
     }
 
     public static void main(String[] args) {
-        byte[] data = Utils.hexconv("6000000000200001fe80000000000000023048fffe904cd2ff02000000000000000000026c5b5f303a000100050200008300527800000000ff02000000000000000000026c5b5f30");
+        String iphex = "6000000000200001fe80000000000000023048fffe904cd2ff02000000000000000000026c5b5f303a000100050200008300527800000000ff02000000000000000000026c5b5f30";
+        if(args.length > 0) {
+            iphex = args[0];
+            System.out.println("Parsing: '" + args[0] + "'");
+        }
+        byte[] data = Utils.hexconv(iphex);
         IPv6Packet packet = new IPv6Packet();
         packet.setBytes(data);
         packet.parsePacketData(packet);
-        packet.printPacket(System.out);
+        packet.printPacket(new Formatter(System.out));
+        
+        if (packet.nextHeader == 58) {
+            ICMP6Packet icmpPacket = new ICMP6Packet();
+            icmpPacket.parsePacketData(packet);
+            icmpPacket.printPacket(new Formatter(System.out));
+        }
     }
-
 }
